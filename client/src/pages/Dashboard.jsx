@@ -361,6 +361,70 @@ const styles = `
 }
 
 /* ==========================================
+   PROFILE IMAGE
+========================================== */
+
+.topAvatarWrapper {
+  position: relative;
+  width: 38px;
+  height: 38px;
+}
+
+.topProfileImage {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  object-fit: cover;
+  display: block;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.25);
+}
+
+.profileImageWrapper {
+  position: relative;
+  width: 68px;
+  height: 68px;
+  flex-shrink: 0;
+}
+
+.profileImage {
+  width: 68px;
+  height: 68px;
+  border-radius: 20px;
+  object-fit: cover;
+  display: block;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 15px 35px rgba(99, 102, 241, 0.3);
+}
+
+.profileImageEdit {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 27px;
+  height: 27px;
+  border-radius: 9px;
+  border: 2px solid #050509;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.25s ease;
+  box-shadow: 0 5px 15px rgba(99, 102, 241, 0.35);
+}
+
+.profileImageEdit:hover {
+  transform: scale(1.1) rotate(-5deg);
+  box-shadow: 0 8px 22px rgba(168, 85, 247, 0.5);
+}
+
+.profileImageInput {
+  display: none;
+}
+
+/* ==========================================
    CONTENT
 ========================================== */
 
@@ -1042,10 +1106,22 @@ const styles = `
     padding: 18px;
   }
 
-  .profileBigAvatar {
+  .profileBigAvatar,
+  .profileImageWrapper {
+    width: 58px;
+    height: 58px;
+  }
+
+  .profileImage {
     width: 58px;
     height: 58px;
     border-radius: 17px;
+  }
+
+  .profileImageEdit {
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
   }
 }
 `;
@@ -1061,6 +1137,12 @@ function Dashboard() {
   const [success, setSuccess] = useState("");
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // ==========================================
+  // PROFILE IMAGE
+  // ==========================================
+
+  const [profileImage, setProfileImage] = useState("");
 
   // ==========================================
   // GET LOGGED-IN USER
@@ -1079,11 +1161,19 @@ function Dashboard() {
       const parsedUser = JSON.parse(storedUser);
 
       setUser(parsedUser);
+
+      // Load saved profile image
+      const savedProfileImage = localStorage.getItem("profileImage");
+
+      if (savedProfileImage) {
+        setProfileImage(savedProfileImage);
+      }
     } catch (error) {
       console.error("Invalid user data:", error);
 
       localStorage.removeItem("user");
       localStorage.removeItem("token");
+      localStorage.removeItem("profileImage");
 
       navigate("/login");
     }
@@ -1139,6 +1229,77 @@ function Dashboard() {
     } finally {
       setLoadingUsers(false);
     }
+  };
+
+  // ==========================================
+  // PROFILE IMAGE UPLOAD
+  // ==========================================
+
+  const handleProfileImageChange = (e) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    setError("");
+    setSuccess("");
+
+    // Only allow images
+    if (!file.type.startsWith("image/")) {
+      setError("Please select a valid image file.");
+      return;
+    }
+
+    // Maximum 5 MB
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Profile image must be smaller than 5MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      const imageData = reader.result;
+
+      setProfileImage(imageData);
+
+      localStorage.setItem("profileImage", imageData);
+
+      setSuccess("Profile image updated successfully.");
+
+      setTimeout(() => {
+        setSuccess("");
+      }, 3000);
+    };
+
+    reader.onerror = () => {
+      setError("Failed to read the selected image.");
+    };
+
+    reader.readAsDataURL(file);
+
+    // Allow selecting the same file again
+    e.target.value = "";
+  };
+
+  // ==========================================
+  // REMOVE PROFILE IMAGE
+  // ==========================================
+
+  const handleRemoveProfileImage = () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to remove your profile image?",
+    );
+
+    if (!confirmed) return;
+
+    localStorage.removeItem("profileImage");
+    setProfileImage("");
+
+    setSuccess("Profile image removed successfully.");
+
+    setTimeout(() => {
+      setSuccess("");
+    }, 3000);
   };
 
   // ==========================================
@@ -1261,6 +1422,10 @@ function Dashboard() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+
+    // Remove this if you want image to remain
+    // after logging out.
+    localStorage.removeItem("profileImage");
 
     navigate("/login");
   };
@@ -1447,7 +1612,19 @@ function Dashboard() {
               </button>
 
               <div className="profileMini">
-                <div className="avatar">{getInitials(user.name)}</div>
+                {/* TOP PROFILE IMAGE */}
+
+                <div className="topAvatarWrapper">
+                  {profileImage ? (
+                    <img
+                      src={profileImage}
+                      alt={user.name}
+                      className="topProfileImage"
+                    />
+                  ) : (
+                    <div className="avatar">{getInitials(user.name)}</div>
+                  )}
+                </div>
 
                 <div className="profileName">
                   <div>{user.name}</div>
@@ -1490,7 +1667,39 @@ function Dashboard() {
 
             <section className="profilePanel">
               <div className="profileHero">
-                <div className="profileBigAvatar">{getInitials(user.name)}</div>
+                {/* PROFILE IMAGE */}
+
+                <div className="profileImageWrapper">
+                  {profileImage ? (
+                    <img
+                      src={profileImage}
+                      alt={user.name}
+                      className="profileImage"
+                    />
+                  ) : (
+                    <div className="profileBigAvatar">
+                      {getInitials(user.name)}
+                    </div>
+                  )}
+
+                  {/* EDIT IMAGE */}
+
+                  <label
+                    htmlFor="profileImageUpload"
+                    className="profileImageEdit"
+                    title="Change profile image"
+                  >
+                    ✎
+                  </label>
+
+                  <input
+                    id="profileImageUpload"
+                    type="file"
+                    accept="image/*"
+                    className="profileImageInput"
+                    onChange={handleProfileImageChange}
+                  />
+                </div>
 
                 <div>
                   <h2>{user.name}</h2>
@@ -1516,6 +1725,27 @@ function Dashboard() {
 
                       {user.isActive ? "Active" : "Inactive"}
                     </span>
+
+                    {/* REMOVE IMAGE BUTTON */}
+
+                    {profileImage && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveProfileImage}
+                        style={{
+                          border: "1px solid rgba(239, 68, 68, 0.2)",
+                          background: "rgba(239, 68, 68, 0.07)",
+                          color: "#fca5a5",
+                          padding: "4px 8px",
+                          borderRadius: "999px",
+                          fontSize: "9px",
+                          fontWeight: "600",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Remove Photo
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1536,6 +1766,20 @@ function Dashboard() {
                 </div>
               </div>
             </section>
+
+            {/* PROFILE SUCCESS / ERROR */}
+
+            {(error || success) && (
+              <div
+                style={{
+                  marginBottom: "25px",
+                }}
+              >
+                {error && <div className="alert error">{error}</div>}
+
+                {success && <div className="alert success">{success}</div>}
+              </div>
+            )}
 
             {/* ==========================================
                 STATISTICS
@@ -1622,14 +1866,6 @@ function Dashboard() {
                     {loadingUsers ? "Refreshing" : "Refresh"}
                   </button>
                 </div>
-
-                {/* ERROR */}
-
-                {error && <div className="alert error">{error}</div>}
-
-                {/* SUCCESS */}
-
-                {success && <div className="alert success">{success}</div>}
 
                 {/* TABLE */}
 
