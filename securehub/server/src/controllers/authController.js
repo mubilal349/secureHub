@@ -1,0 +1,59 @@
+import { registerUser, loginUser } from "../services/authService.js";
+
+export const register = async (req, res) => {
+  try {
+    const { name, email, password } = req.body || {};
+
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        message: "Name, email and password are required",
+      });
+    }
+
+    const user = await registerUser({
+      name,
+      email,
+      password,
+    });
+
+    return res.status(201).json({
+      message: "User registered successfully",
+      user,
+    });
+  } catch (error) {
+    console.error("Registration error:", error.message);
+
+    return res.status(400).json({
+      message: error.message,
+    });
+  }
+};
+
+export const login = async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Email and password are required",
+      });
+    }
+
+    const { token, user } = await loginUser({
+      email,
+      password,
+    });
+
+    return res.status(200).json({
+      message: "Login successful",
+      token,
+      user,
+    });
+  } catch (error) {
+    console.error("Login error:", error.message);
+
+    return res.status(401).json({
+      message: error.message,
+    });
+  }
+};
