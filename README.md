@@ -1,5 +1,11 @@
 # 🔐 SecureHub
 
+<img width="937" height="429" alt="image" src="https://github.com/user-attachments/assets/532976b2-0c95-49ec-82dd-6f9afcbcd050" />
+
+
+
+
+
 SecureHub is a full-stack **MERN authentication and authorization project** built to practically understand how authentication, authorization, JWT security, protected routes, role-based access control, and admin user management work in a real-world web application.
 
 The project provides different permissions for **Admin** and **Regular User** accounts.
