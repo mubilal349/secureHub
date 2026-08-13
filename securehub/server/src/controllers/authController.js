@@ -1,4 +1,9 @@
 import { registerUser, loginUser } from "../services/authService.js";
+import createActivity from "../utils/createActivity.js";
+
+// ==========================================
+// REGISTER
+// ==========================================
 
 export const register = async (req, res) => {
   try {
@@ -16,6 +21,16 @@ export const register = async (req, res) => {
       password,
     });
 
+    // Register activity
+    await createActivity({
+      user: user._id,
+      userRole: user.role,
+      type: "REGISTER",
+      activity: "User Registered",
+      description: "New user registered",
+      req,
+    });
+
     return res.status(201).json({
       message: "User registered successfully",
       user,
@@ -28,6 +43,10 @@ export const register = async (req, res) => {
     });
   }
 };
+
+// ==========================================
+// LOGIN
+// ==========================================
 
 export const login = async (req, res) => {
   try {
@@ -44,6 +63,16 @@ export const login = async (req, res) => {
       password,
     });
 
+    // Successful login activity
+    await createActivity({
+      user: user._id,
+      userRole: user.role,
+      type: "LOGIN_SUCCESS",
+      activity: "Successful Login",
+      description: "Login successful",
+      req,
+    });
+
     return res.status(200).json({
       message: "Login successful",
       token,
@@ -51,6 +80,15 @@ export const login = async (req, res) => {
     });
   } catch (error) {
     console.error("Login error:", error.message);
+
+    // Failed login activity
+    await createActivity({
+      user: null,
+      type: "LOGIN_FAILED",
+      activity: "Failed Login Attempt",
+      description: "Failed login attempt",
+      req,
+    });
 
     return res.status(401).json({
       message: error.message,

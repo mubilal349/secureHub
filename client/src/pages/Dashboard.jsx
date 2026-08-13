@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API_BASE_URL = "http://localhost:8000";
+
 const styles = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
@@ -11,78 +13,131 @@ const styles = `
 .dashboard {
   min-height: 100vh;
   background:
-    radial-gradient(circle at 10% 10%, rgba(99, 102, 241, 0.16), transparent 28%),
-    radial-gradient(circle at 90% 20%, rgba(168, 85, 247, 0.13), transparent 28%),
-    radial-gradient(circle at 50% 100%, rgba(14, 165, 233, 0.08), transparent 30%),
+    radial-gradient(circle at 10% 10%, rgba(99,102,241,.16), transparent 28%),
+    radial-gradient(circle at 90% 20%, rgba(168,85,247,.13), transparent 28%),
+    radial-gradient(circle at 50% 100%, rgba(14,165,233,.08), transparent 30%),
     #050509;
   color: #fff;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   display: flex;
   overflow-x: hidden;
-  min-height: 100vh;
 }
 
-.dashboard::before {
+.dashboard::before,
+.dashboard::after {
   content: "";
   position: fixed;
-  width: 450px;
-  height: 450px;
   border-radius: 50%;
-  background: rgba(99, 102, 241, 0.08);
   filter: blur(100px);
-  top: -150px;
-  left: 20%;
   pointer-events: none;
   animation: floatGlow 8s ease-in-out infinite;
 }
 
+.dashboard::before {
+  width: 450px;
+  height: 450px;
+  background: rgba(99,102,241,.08);
+  top: -150px;
+  left: 20%;
+}
+
 .dashboard::after {
-  content: "";
-  position: fixed;
   width: 350px;
   height: 350px;
-  border-radius: 50%;
-  background: rgba(168, 85, 247, 0.06);
-  filter: blur(100px);
+  background: rgba(168,85,247,.06);
   bottom: -100px;
   right: 5%;
-  pointer-events: none;
-  animation: floatGlow 10s ease-in-out infinite reverse;
+  animation-duration: 10s;
+  animation-direction: reverse;
 }
 
 @keyframes floatGlow {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0);
+  0%,100% {
+    transform: translate3d(0,0,0);
   }
 
   50% {
-    transform: translate3d(30px, -25px, 0);
+    transform: translate3d(30px,-25px,0);
   }
 }
 
-/* ==========================================
-   SIDEBAR
-========================================== */
+@keyframes logoPulse {
+  0%,100% {
+    box-shadow: 0 10px 30px rgba(99,102,241,.25);
+  }
+
+  50% {
+    box-shadow: 0 10px 40px rgba(168,85,247,.45);
+  }
+}
+
+@keyframes statusPulse {
+  0%,100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(.7);
+    opacity: .55;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes rowEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes overlayIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
 
 .sidebar {
   width: 250px;
   min-height: 100vh;
   padding: 28px 18px;
-  background: rgba(9, 9, 15, 0.78);
-  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(9,9,15,.78);
+  border-right: 1px solid rgba(255,255,255,.07);
   backdrop-filter: blur(25px);
-  -webkit-backdrop-filter: blur(25px);
   position: fixed;
   left: 0;
   top: 0;
   z-index: 50;
   display: flex;
   flex-direction: column;
-  transition: transform 0.3s ease;
+  transition: transform .3s ease;
 }
-
-/* Sidebar header */
 
 .sidebarHeader {
   display: flex;
@@ -107,60 +162,43 @@ const styles = `
   place-items: center;
   font-size: 18px;
   font-weight: 800;
-  background: linear-gradient(135deg, #6366f1, #a855f7);
-  box-shadow: 0 10px 30px rgba(99, 102, 241, 0.35);
+  background: linear-gradient(135deg,#6366f1,#a855f7);
+  box-shadow: 0 10px 30px rgba(99,102,241,.35);
   animation: logoPulse 3s ease-in-out infinite;
-}
-
-@keyframes logoPulse {
-  0%,
-  100% {
-    box-shadow: 0 10px 30px rgba(99, 102, 241, 0.25);
-  }
-
-  50% {
-    box-shadow: 0 10px 40px rgba(168, 85, 247, 0.45);
-  }
 }
 
 .logoText {
   font-size: 17px;
   font-weight: 800;
-  letter-spacing: 0.04em;
+  letter-spacing: .04em;
 }
 
 .logoText span {
   color: #818cf8;
 }
 
-/* Close button */
-
 .closeSidebar {
   display: none;
   width: 34px;
   height: 34px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.04);
   color: #a1a1aa;
   border-radius: 9px;
   cursor: pointer;
   font-size: 22px;
-  line-height: 1;
-  transition: all 0.25s ease;
 }
 
 .closeSidebar:hover {
   color: #fff;
-  background: rgba(239, 68, 68, 0.12);
-  border-color: rgba(239, 68, 68, 0.25);
-  transform: rotate(90deg);
+  background: rgba(239,68,68,.12);
 }
 
 .sidebarLabel {
   color: #52525b;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.13em;
+  letter-spacing: .13em;
   text-transform: uppercase;
   padding: 0 12px 10px;
 }
@@ -185,12 +223,12 @@ const styles = `
   text-align: left;
   font-size: 13px;
   font-weight: 500;
-  transition: all 0.25s ease;
+  transition: .25s;
 }
 
 .navItem:hover {
   color: #fff;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255,255,255,.05);
   transform: translateX(3px);
 }
 
@@ -198,10 +236,10 @@ const styles = `
   color: #fff;
   background: linear-gradient(
     90deg,
-    rgba(99, 102, 241, 0.2),
-    rgba(168, 85, 247, 0.08)
+    rgba(99,102,241,.2),
+    rgba(168,85,247,.08)
   );
-  border: 1px solid rgba(129, 140, 248, 0.16);
+  border: 1px solid rgba(129,140,248,.16);
 }
 
 .navIcon {
@@ -211,11 +249,11 @@ const styles = `
   display: grid;
   place-items: center;
   font-size: 14px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255,255,255,.04);
 }
 
 .navItem.active .navIcon {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg,#6366f1,#8b5cf6);
 }
 
 .sidebarBottom {
@@ -227,20 +265,8 @@ const styles = `
 }
 
 .logoutSide:hover {
-  background: rgba(239, 68, 68, 0.08);
+  background: rgba(239,68,68,.08);
 }
-
-/* ==========================================
-   MOBILE OVERLAY
-========================================== */
-
-.sidebarOverlay {
-  display: none;
-}
-
-/* ==========================================
-   MAIN
-========================================== */
 
 .main {
   margin-left: 250px;
@@ -248,18 +274,14 @@ const styles = `
   min-height: 100vh;
 }
 
-/* ==========================================
-   TOP BAR
-========================================== */
-
 .topbar {
   height: 76px;
   padding: 0 38px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  background: rgba(5, 5, 9, 0.55);
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  background: rgba(5,5,9,.55);
   backdrop-filter: blur(20px);
   position: sticky;
   top: 0;
@@ -285,18 +307,11 @@ const styles = `
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.035);
   color: #a1a1aa;
   cursor: pointer;
   position: relative;
-  transition: all 0.25s ease;
-}
-
-.notification:hover {
-  color: #fff;
-  transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.07);
 }
 
 .notificationDot {
@@ -316,16 +331,20 @@ const styles = `
   gap: 10px;
 }
 
+.avatar,
+.profileBigAvatar {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg,#6366f1,#a855f7);
+  font-weight: 800;
+  box-shadow: 0 6px 20px rgba(99,102,241,.25);
+}
+
 .avatar {
   width: 38px;
   height: 38px;
   border-radius: 12px;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(135deg, #6366f1, #a855f7);
   font-size: 13px;
-  font-weight: 800;
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.25);
 }
 
 .profileName {
@@ -339,30 +358,18 @@ const styles = `
   margin-top: 2px;
 }
 
-/* Mobile hamburger */
-
 .mobileMenu {
   display: none;
   width: 38px;
   height: 38px;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.04);
   color: #fff;
   border-radius: 10px;
   cursor: pointer;
   font-size: 19px;
-  transition: all 0.25s ease;
 }
-
-.mobileMenu:hover {
-  background: rgba(99, 102, 241, 0.12);
-  border-color: rgba(129, 140, 248, 0.25);
-}
-
-/* ==========================================
-   PROFILE IMAGE
-========================================== */
 
 .topAvatarWrapper {
   position: relative;
@@ -376,57 +383,8 @@ const styles = `
   border-radius: 12px;
   object-fit: cover;
   display: block;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.25);
+  border: 1px solid rgba(255,255,255,.1);
 }
-
-.profileImageWrapper {
-  position: relative;
-  width: 68px;
-  height: 68px;
-  flex-shrink: 0;
-}
-
-.profileImage {
-  width: 68px;
-  height: 68px;
-  border-radius: 20px;
-  object-fit: cover;
-  display: block;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 15px 35px rgba(99, 102, 241, 0.3);
-}
-
-.profileImageEdit {
-  position: absolute;
-  right: -6px;
-  bottom: -6px;
-  width: 27px;
-  height: 27px;
-  border-radius: 9px;
-  border: 2px solid #050509;
-  background: linear-gradient(135deg, #6366f1, #a855f7);
-  color: #fff;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 0.25s ease;
-  box-shadow: 0 5px 15px rgba(99, 102, 241, 0.35);
-}
-
-.profileImageEdit:hover {
-  transform: scale(1.1) rotate(-5deg);
-  box-shadow: 0 8px 22px rgba(168, 85, 247, 0.5);
-}
-
-.profileImageInput {
-  display: none;
-}
-
-/* ==========================================
-   CONTENT
-========================================== */
 
 .content {
   max-width: 1450px;
@@ -439,28 +397,28 @@ const styles = `
   justify-content: space-between;
   align-items: flex-end;
   margin-bottom: 32px;
-  animation: fadeUp 0.55s ease both;
+  animation: fadeUp .55s ease both;
 }
 
 .heroEyebrow {
   color: #818cf8;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: .12em;
   text-transform: uppercase;
   margin-bottom: 10px;
 }
 
 .heroTitle {
-  font-size: clamp(28px, 4vw, 42px);
+  font-size: clamp(28px,4vw,42px);
   line-height: 1.05;
-  letter-spacing: -0.045em;
+  letter-spacing: -.045em;
   margin: 0;
   font-weight: 800;
 }
 
 .heroTitle span {
-  background: linear-gradient(90deg, #fff, #a5b4fc, #c084fc);
+  background: linear-gradient(90deg,#fff,#a5b4fc,#c084fc);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -477,8 +435,8 @@ const styles = `
   gap: 8px;
   padding: 9px 13px;
   border-radius: 999px;
-  background: rgba(34, 197, 94, 0.07);
-  border: 1px solid rgba(34, 197, 94, 0.15);
+  background: rgba(34,197,94,.07);
+  border: 1px solid rgba(34,197,94,.15);
   color: #86efac;
   font-size: 11px;
   font-weight: 600;
@@ -489,30 +447,13 @@ const styles = `
   height: 7px;
   border-radius: 50%;
   background: #4ade80;
-  box-shadow: 0 0 12px rgba(74, 222, 128, 0.9);
+  box-shadow: 0 0 12px rgba(74,222,128,.9);
   animation: statusPulse 1.8s infinite;
 }
 
-@keyframes statusPulse {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-
-  50% {
-    transform: scale(0.7);
-    opacity: 0.55;
-  }
-}
-
-/* ==========================================
-   STAT CARDS
-========================================== */
-
 .statsGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4,1fr);
   gap: 18px;
   margin-bottom: 28px;
 }
@@ -525,43 +466,19 @@ const styles = `
   border-radius: 18px;
   background: linear-gradient(
     145deg,
-    rgba(255, 255, 255, 0.065),
-    rgba(255, 255, 255, 0.018)
+    rgba(255,255,255,.065),
+    rgba(255,255,255,.018)
   );
-  border: 1px solid rgba(255, 255, 255, 0.075);
+  border: 1px solid rgba(255,255,255,.075);
   backdrop-filter: blur(20px);
-  transition: all 0.3s ease;
-  animation: fadeUp 0.6s ease both;
-}
-
-.statCard:nth-child(2) {
-  animation-delay: 0.08s;
-}
-
-.statCard:nth-child(3) {
-  animation-delay: 0.16s;
-}
-
-.statCard:nth-child(4) {
-  animation-delay: 0.24s;
+  transition: .3s;
+  animation: fadeUp .6s ease both;
 }
 
 .statCard:hover {
   transform: translateY(-6px);
-  border-color: rgba(129, 140, 248, 0.28);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
-}
-
-.statCard::after {
-  content: "";
-  position: absolute;
-  width: 120px;
-  height: 120px;
-  right: -50px;
-  bottom: -55px;
-  border-radius: 50%;
-  background: rgba(99, 102, 241, 0.13);
-  filter: blur(20px);
+  border-color: rgba(129,140,248,.28);
+  box-shadow: 0 20px 50px rgba(0,0,0,.25);
 }
 
 .statTop {
@@ -576,7 +493,7 @@ const styles = `
   border-radius: 11px;
   display: grid;
   place-items: center;
-  background: rgba(129, 140, 248, 0.11);
+  background: rgba(129,140,248,.11);
   color: #a5b4fc;
   font-size: 17px;
 }
@@ -586,14 +503,14 @@ const styles = `
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: .08em;
 }
 
 .statValue {
   margin-top: 18px;
   font-size: 25px;
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: -.03em;
 }
 
 .statDescription {
@@ -602,27 +519,23 @@ const styles = `
   margin-top: 5px;
 }
 
-/* ==========================================
-   PROFILE PANEL
-========================================== */
-
 .profilePanel {
   margin-bottom: 25px;
   padding: 25px;
   display: grid;
   grid-template-columns: 1.5fr 1fr;
   gap: 25px;
-  border: 1px solid rgba(255, 255, 255, 0.075);
+  border: 1px solid rgba(255,255,255,.075);
   border-radius: 20px;
   background:
     linear-gradient(
       135deg,
-      rgba(99, 102, 241, 0.1),
-      rgba(255, 255, 255, 0.025)
+      rgba(99,102,241,.1),
+      rgba(255,255,255,.025)
     ),
-    rgba(255, 255, 255, 0.02);
+    rgba(255,255,255,.02);
   backdrop-filter: blur(20px);
-  animation: fadeUp 0.5s ease both;
+  animation: fadeUp .5s ease both;
 }
 
 .profileHero {
@@ -631,17 +544,29 @@ const styles = `
   gap: 18px;
 }
 
-.profileBigAvatar {
+.profileImageWrapper {
+  position: relative;
   width: 68px;
   height: 68px;
   flex-shrink: 0;
+}
+
+.profileImage,
+.profileBigAvatar {
+  width: 68px;
+  height: 68px;
   border-radius: 20px;
-  display: grid;
-  place-items: center;
+}
+
+.profileImage {
+  object-fit: cover;
+  display: block;
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 15px 35px rgba(99,102,241,.3);
+}
+
+.profileBigAvatar {
   font-size: 22px;
-  font-weight: 800;
-  background: linear-gradient(135deg, #6366f1, #a855f7);
-  box-shadow: 0 15px 35px rgba(99, 102, 241, 0.3);
 }
 
 .profileHero h2 {
@@ -664,8 +589,8 @@ const styles = `
 .detail {
   padding: 13px;
   border-radius: 12px;
-  background: rgba(0, 0, 0, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(0,0,0,.18);
+  border: 1px solid rgba(255,255,255,.05);
 }
 
 .detailLabel {
@@ -673,7 +598,7 @@ const styles = `
   color: #52525b;
   font-size: 9px;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: .08em;
   margin-bottom: 6px;
 }
 
@@ -689,24 +614,39 @@ const styles = `
   align-items: center;
   padding: 4px 8px;
   border-radius: 999px;
-  background: rgba(129, 140, 248, 0.12);
+  background: rgba(129,140,248,.12);
   color: #a5b4fc;
   font-size: 9px;
   text-transform: uppercase;
   font-weight: 700;
 }
 
-/* ==========================================
-   GLASS PANEL
-========================================== */
+.profileImageEdit {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 27px;
+  height: 27px;
+  border-radius: 9px;
+  border: 2px solid #050509;
+  background: linear-gradient(135deg,#6366f1,#a855f7);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.profileImageInput {
+  display: none;
+}
 
 .panel {
-  border: 1px solid rgba(255, 255, 255, 0.075);
-  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255,255,255,.075);
+  background: rgba(255,255,255,.025);
   border-radius: 20px;
   backdrop-filter: blur(20px);
   overflow: hidden;
-  animation: fadeUp 0.65s ease both;
+  animation: fadeUp .65s ease both;
 }
 
 .panelHeader {
@@ -714,7 +654,7 @@ const styles = `
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255,255,255,.06);
 }
 
 .panelTitle {
@@ -733,44 +673,100 @@ const styles = `
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid rgba(129, 140, 248, 0.2);
-  background: rgba(99, 102, 241, 0.09);
+  border: 1px solid rgba(129,140,248,.2);
+  background: rgba(99,102,241,.09);
   color: #a5b4fc;
   padding: 9px 13px;
   border-radius: 10px;
   cursor: pointer;
   font-size: 11px;
   font-weight: 600;
-  transition: all 0.25s ease;
 }
 
 .refreshButton:hover {
-  background: rgba(99, 102, 241, 0.18);
-  transform: translateY(-2px);
+  background: rgba(99,102,241,.16);
 }
 
 .refreshButton:disabled {
-  opacity: 0.5;
+  opacity: .5;
   cursor: not-allowed;
 }
 
-.refreshIcon {
-  display: inline-block;
-}
-
 .refreshIcon.spinning {
-  animation: spin 0.8s linear infinite;
+  display: inline-block;
+  animation: spin .8s linear infinite;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.035);
+  color: #a1a1aa;
+  padding: 9px 13px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
 }
 
-/* ==========================================
-   TABLE
-========================================== */
+.backButton:hover {
+  color: #fff;
+  background: rgba(255,255,255,.07);
+}
+
+.profileToolbar {
+  padding: 18px 25px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+
+.searchWrapper {
+  position: relative;
+  flex: 1;
+  max-width: 420px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #52525b;
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  border: 1px solid rgba(255,255,255,.08);
+  outline: none;
+  background: rgba(0,0,0,.2);
+  color: #e4e4e7;
+  padding: 11px 13px 11px 36px;
+  border-radius: 10px;
+  font-size: 11px;
+  transition: .2s;
+}
+
+.searchInput::placeholder {
+  color: #52525b;
+}
+
+.searchInput:focus {
+  border-color: rgba(129,140,248,.35);
+  box-shadow: 0 0 0 3px rgba(99,102,241,.07);
+}
+
+.profileCount {
+  color: #71717a;
+  font-size: 11px;
+  white-space: nowrap;
+}
 
 .tableWrapper {
   overflow-x: auto;
@@ -779,7 +775,7 @@ const styles = `
 .table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 720px;
+  min-width: 850px;
 }
 
 .table th {
@@ -788,37 +784,25 @@ const styles = `
   color: #52525b;
   font-size: 9px;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: .1em;
   font-weight: 700;
-  background: rgba(0, 0, 0, 0.12);
+  background: rgba(0,0,0,.12);
 }
 
 .table td {
   padding: 16px 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.045);
+  border-top: 1px solid rgba(255,255,255,.045);
   color: #a1a1aa;
   font-size: 11px;
 }
 
 .table tbody tr {
-  transition: all 0.25s ease;
-  animation: rowEnter 0.45s ease both;
+  transition: .25s;
+  animation: rowEnter .45s ease both;
 }
 
 .table tbody tr:hover {
-  background: rgba(129, 140, 248, 0.045);
-}
-
-@keyframes rowEnter {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  background: rgba(129,140,248,.045);
 }
 
 .userCell {
@@ -830,15 +814,32 @@ const styles = `
 }
 
 .tableAvatar {
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
   display: grid;
   place-items: center;
-  background: rgba(129, 140, 248, 0.12);
-  color: #a5b4fc;
+  background: linear-gradient(135deg,#6366f1,#a855f7);
+  color: #fff;
   font-size: 10px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.profileUserInfo {
+  min-width: 0;
+}
+
+.profileUserName {
+  color: #e4e4e7;
+  font-size: 11px;
   font-weight: 700;
+}
+
+.profileUserId {
+  margin-top: 3px;
+  color: #52525b;
+  font-size: 8px;
 }
 
 .status {
@@ -852,12 +853,12 @@ const styles = `
 }
 
 .status.active {
-  background: rgba(34, 197, 94, 0.08);
+  background: rgba(34,197,94,.08);
   color: #86efac;
 }
 
 .status.inactive {
-  background: rgba(239, 68, 68, 0.08);
+  background: rgba(239,68,68,.08);
   color: #fca5a5;
 }
 
@@ -874,71 +875,45 @@ const styles = `
 }
 
 .actionButton {
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255,255,255,.07);
+  background: rgba(255,255,255,.035);
   color: #a1a1aa;
   padding: 7px 10px;
   border-radius: 8px;
   cursor: pointer;
   font-size: 10px;
-  transition: all 0.2s ease;
-}
-
-.actionButton:hover {
-  transform: translateY(-2px);
 }
 
 .editButton:hover {
   color: #a5b4fc;
-  border-color: rgba(129, 140, 248, 0.3);
-  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(129,140,248,.3);
+  background: rgba(99,102,241,.08);
 }
 
 .deleteButton:hover {
   color: #fca5a5;
-  border-color: rgba(239, 68, 68, 0.3);
-  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239,68,68,.3);
+  background: rgba(239,68,68,.08);
 }
-
-/* ==========================================
-   ALERTS
-========================================== */
 
 .alert {
   margin: 18px 20px 0;
   padding: 12px 14px;
   border-radius: 11px;
   font-size: 11px;
-  animation: alertIn 0.3s ease both;
-}
-
-@keyframes alertIn {
-  from {
-    opacity: 0;
-    transform: translateY(-5px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .error {
   color: #fca5a5;
-  background: rgba(239, 68, 68, 0.07);
-  border: 1px solid rgba(239, 68, 68, 0.15);
+  background: rgba(239,68,68,.07);
+  border: 1px solid rgba(239,68,68,.15);
 }
 
 .success {
   color: #86efac;
-  background: rgba(34, 197, 94, 0.07);
-  border: 1px solid rgba(34, 197, 94, 0.15);
+  background: rgba(34,197,94,.07);
+  border: 1px solid rgba(34,197,94,.15);
 }
-
-/* ==========================================
-   LOADING
-========================================== */
 
 .loading {
   min-height: 170px;
@@ -952,43 +927,103 @@ const styles = `
 .loadingSpinner {
   width: 24px;
   height: 24px;
-  border: 2px solid rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255,255,255,.08);
   border-top-color: #818cf8;
   border-radius: 50%;
   margin-right: 10px;
-  animation: spin 0.8s linear infinite;
+  animation: spin .8s linear infinite;
 }
 
-.empty {
+.empty,
+.activityEmpty {
   padding: 55px 20px;
   text-align: center;
   color: #52525b;
   font-size: 12px;
 }
 
-/* ==========================================
-   FADE
-========================================== */
+/* Activity */
 
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(18px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.activityList {
+  display: flex;
+  flex-direction: column;
 }
 
-/* ==========================================
-   TABLET
-========================================== */
+.activityItem {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 22px;
+  border-top: 1px solid rgba(255,255,255,.045);
+  transition: .25s;
+}
 
-@media (max-width: 1100px) {
+.activityItem:hover {
+  background: rgba(129,140,248,.045);
+}
+
+.activityIcon {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: rgba(99,102,241,.1);
+  color: #a5b4fc;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.activityIcon.success {
+  background: rgba(34,197,94,.1);
+  color: #86efac;
+}
+
+.activityIcon.failed {
+  background: rgba(239,68,68,.1);
+  color: #fca5a5;
+}
+
+.activityInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.activityAction {
+  color: #e4e4e7;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.activityUser {
+  margin-top: 4px;
+  color: #71717a;
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activityDetails {
+  margin-top: 4px;
+  color: #52525b;
+  font-size: 9px;
+}
+
+.activityTime {
+  color: #52525b;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.sidebarOverlay {
+  display: none;
+}
+
+@media (max-width:1100px) {
   .statsGrid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2,1fr);
   }
 
   .profilePanel {
@@ -996,15 +1031,10 @@ const styles = `
   }
 }
 
-/* ==========================================
-   MOBILE
-========================================== */
-
-@media (max-width: 800px) {
-
+@media (max-width:800px) {
   .sidebar {
     transform: translateX(-105%);
-    box-shadow: 20px 0 60px rgba(0, 0, 0, 0.45);
+    box-shadow: 20px 0 60px rgba(0,0,0,.45);
   }
 
   .sidebar.open {
@@ -1020,20 +1050,10 @@ const styles = `
     display: block;
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.62);
+    background: rgba(0,0,0,.62);
     backdrop-filter: blur(4px);
     z-index: 40;
-    animation: overlayIn 0.25s ease both;
-  }
-
-  @keyframes overlayIn {
-    from {
-      opacity: 0;
-    }
-
-    to {
-      opacity: 1;
-    }
+    animation: overlayIn .25s ease both;
   }
 
   .main {
@@ -1062,14 +1082,22 @@ const styles = `
     gap: 15px;
     flex-direction: column;
   }
+
+  .profileToolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .searchWrapper {
+    max-width: none;
+  }
+
+  .profileCount {
+    text-align: center;
+  }
 }
 
-/* ==========================================
-   SMALL MOBILE
-========================================== */
-
-@media (max-width: 550px) {
-
+@media (max-width:550px) {
   .statsGrid {
     grid-template-columns: 1fr;
   }
@@ -1118,31 +1146,68 @@ const styles = `
     border-radius: 17px;
   }
 
-  .profileImageEdit {
-    width: 24px;
-    height: 24px;
-    border-radius: 8px;
+  .activityItem {
+    align-items: flex-start;
+    padding: 14px 16px;
+  }
+
+  .activityTime {
+    display: none;
+  }
+
+  .activityIcon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .panelHeader {
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .panelHeader > div:last-child {
+    flex-shrink: 0;
   }
 }
 `;
+
+const activityLabels = {
+  LOGIN_SUCCESS: "Login successful",
+  LOGIN_FAILED: "Failed login attempt",
+  REGISTER: "New user registered",
+  LOGOUT: "User logged out",
+  PASSWORD_CHANGED: "Password changed",
+  PROFILE_UPDATED: "Profile updated",
+};
+
+const activityIcons = {
+  LOGIN_SUCCESS: "✓",
+  LOGIN_FAILED: "!",
+  REGISTER: "+",
+  LOGOUT: "↪",
+  PASSWORD_CHANGED: "🔒",
+  PROFILE_UPDATED: "✎",
+};
 
 function Dashboard() {
   const navigate = useNavigate();
 
   const [user, setUser] = useState(null);
   const [users, setUsers] = useState([]);
+  const [activities, setActivities] = useState([]);
+
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [loadingActivities, setLoadingActivities] = useState(false);
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  // ==========================================
-  // PROFILE IMAGE
-  // ==========================================
-
   const [profileImage, setProfileImage] = useState("");
+
+  // NEW: Profile view
+  const [showProfiles, setShowProfiles] = useState(false);
+  const [profileSearch, setProfileSearch] = useState("");
 
   // ==========================================
   // GET LOGGED-IN USER
@@ -1160,16 +1225,19 @@ function Dashboard() {
     try {
       const parsedUser = JSON.parse(storedUser);
 
+      if (!parsedUser || typeof parsedUser !== "object") {
+        throw new Error("Invalid stored user");
+      }
+
       setUser(parsedUser);
 
-      // Load saved profile image
       const savedProfileImage = localStorage.getItem("profileImage");
 
       if (savedProfileImage) {
         setProfileImage(savedProfileImage);
       }
-    } catch (error) {
-      console.error("Invalid user data:", error);
+    } catch (err) {
+      console.error("INVALID USER DATA:", err);
 
       localStorage.removeItem("user");
       localStorage.removeItem("token");
@@ -1180,19 +1248,18 @@ function Dashboard() {
   }, [navigate]);
 
   // ==========================================
-  // FETCH USERS WHEN ADMIN LOGS IN
+  // FETCH ADMIN DATA
   // ==========================================
 
   useEffect(() => {
-    if (!user) return;
-
-    if (user.role !== "admin") return;
+    if (!user || user.role !== "admin") return;
 
     fetchUsers();
+    fetchActivities();
   }, [user]);
 
   // ==========================================
-  // FETCH ALL USERS
+  // FETCH USERS
   // ==========================================
 
   const fetchUsers = async () => {
@@ -1207,7 +1274,7 @@ function Dashboard() {
         return;
       }
 
-      const response = await fetch("http://localhost:8000/api/users", {
+      const response = await fetch(`${API_BASE_URL}/api/users`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -1221,18 +1288,97 @@ function Dashboard() {
         throw new Error(data.message || "Failed to fetch users");
       }
 
-      setUsers(data.users || []);
-    } catch (error) {
-      console.error("FETCH USERS ERROR:", error);
+      setUsers(Array.isArray(data.users) ? data.users : []);
+    } catch (err) {
+      console.error("FETCH USERS ERROR:", err);
 
-      setError(error.message);
+      setError(err.message || "Failed to fetch users");
     } finally {
       setLoadingUsers(false);
     }
   };
 
   // ==========================================
-  // PROFILE IMAGE UPLOAD
+  // FETCH ACTIVITY
+  // ==========================================
+
+  const fetchActivities = async () => {
+    try {
+      setLoadingActivities(true);
+
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/admin/activity`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        console.warn("Activity API unavailable:", response.status);
+
+        setActivities([]);
+        return;
+      }
+
+      const data = await response.json();
+
+      const rawActivities = Array.isArray(data)
+        ? data
+        : Array.isArray(data.activities)
+          ? data.activities
+          : [];
+
+      const normalizedActivities = rawActivities
+        .map((item) => {
+          if (!item) return null;
+
+          const action = item.action || item.type || "";
+
+          const details = item.details || item.description || "";
+
+          const userName =
+            item.user?.name ||
+            item.user?.email ||
+            item.email ||
+            (item.userRole === "admin" ? "Admin" : "User");
+
+          return {
+            ...item,
+            action: String(action).toUpperCase(),
+            details,
+            userName,
+          };
+        })
+        .filter(Boolean);
+
+      normalizedActivities.sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+
+        return dateB - dateA;
+      });
+
+      setActivities(normalizedActivities);
+    } catch (err) {
+      console.error("FETCH ACTIVITIES ERROR:", err);
+
+      setActivities([]);
+    } finally {
+      setLoadingActivities(false);
+    }
+  };
+
+  // ==========================================
+  // PROFILE IMAGE
   // ==========================================
 
   const handleProfileImageChange = (e) => {
@@ -1243,15 +1389,17 @@ function Dashboard() {
     setError("");
     setSuccess("");
 
-    // Only allow images
     if (!file.type.startsWith("image/")) {
       setError("Please select a valid image file.");
+
+      e.target.value = "";
       return;
     }
 
-    // Maximum 5 MB
     if (file.size > 5 * 1024 * 1024) {
       setError("Profile image must be smaller than 5MB.");
+
+      e.target.value = "";
       return;
     }
 
@@ -1266,9 +1414,7 @@ function Dashboard() {
 
       setSuccess("Profile image updated successfully.");
 
-      setTimeout(() => {
-        setSuccess("");
-      }, 3000);
+      setTimeout(() => setSuccess(""), 3000);
     };
 
     reader.onerror = () => {
@@ -1277,7 +1423,6 @@ function Dashboard() {
 
     reader.readAsDataURL(file);
 
-    // Allow selecting the same file again
     e.target.value = "";
   };
 
@@ -1293,13 +1438,41 @@ function Dashboard() {
     if (!confirmed) return;
 
     localStorage.removeItem("profileImage");
+
     setProfileImage("");
 
     setSuccess("Profile image removed successfully.");
 
-    setTimeout(() => {
-      setSuccess("");
-    }, 3000);
+    setTimeout(() => setSuccess(""), 3000);
+  };
+
+  // ==========================================
+  // OPEN ALL PROFILES
+  // ==========================================
+
+  const handleProfiles = async () => {
+    setError("");
+    setSuccess("");
+
+    setShowProfiles(true);
+    setProfileSearch("");
+
+    closeSidebar();
+
+    if (users.length === 0) {
+      await fetchUsers();
+    }
+  };
+
+  // ==========================================
+  // BACK TO OVERVIEW
+  // ==========================================
+
+  const handleBackToOverview = () => {
+    setShowProfiles(false);
+    setProfileSearch("");
+    setError("");
+    setSuccess("");
   };
 
   // ==========================================
@@ -1319,17 +1492,13 @@ function Dashboard() {
 
       const token = localStorage.getItem("token");
 
-      const response = await fetch(
-        `http://localhost:8000/api/users/${userId}`,
-        {
-          method: "DELETE",
-
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+      const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-      );
+      });
 
       const data = await response.json();
 
@@ -1342,10 +1511,12 @@ function Dashboard() {
       setUsers((previousUsers) =>
         previousUsers.filter((item) => item._id !== userId),
       );
-    } catch (error) {
-      console.error("DELETE USER ERROR:", error);
 
-      setError(error.message);
+      fetchActivities();
+    } catch (err) {
+      console.error("DELETE USER ERROR:", err);
+
+      setError(err.message || "Failed to delete user");
     }
   };
 
@@ -1358,13 +1529,22 @@ function Dashboard() {
 
     if (!selectedUser) return;
 
-    const newName = window.prompt("Enter new name:", selectedUser.name);
+    const newName = window.prompt("Enter new name:", selectedUser.name || "");
 
     if (newName === null) return;
 
-    const newEmail = window.prompt("Enter new email:", selectedUser.email);
+    const newEmail = window.prompt(
+      "Enter new email:",
+      selectedUser.email || "",
+    );
 
     if (newEmail === null) return;
+
+    if (!newName.trim() || !newEmail.trim()) {
+      setError("Name and email are required.");
+
+      return;
+    }
 
     try {
       setError("");
@@ -1372,22 +1552,17 @@ function Dashboard() {
 
       const token = localStorage.getItem("token");
 
-      const response = await fetch(
-        `http://localhost:8000/api/users/${userId}`,
-        {
-          method: "PUT",
-
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-
-          body: JSON.stringify({
-            name: newName,
-            email: newEmail,
-          }),
+      const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({
+          name: newName.trim(),
+          email: newEmail.trim(),
+        }),
+      });
 
       const data = await response.json();
 
@@ -1402,16 +1577,18 @@ function Dashboard() {
           item._id === userId
             ? {
                 ...item,
-                name: newName,
-                email: newEmail,
+                name: newName.trim(),
+                email: newEmail.trim(),
               }
             : item,
         ),
       );
-    } catch (error) {
-      console.error("UPDATE USER ERROR:", error);
 
-      setError(error.message);
+      fetchActivities();
+    } catch (err) {
+      console.error("UPDATE USER ERROR:", err);
+
+      setError(err.message || "Failed to update user");
     }
   };
 
@@ -1422,16 +1599,13 @@ function Dashboard() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-
-    // Remove this if you want image to remain
-    // after logging out.
     localStorage.removeItem("profileImage");
 
     navigate("/login");
   };
 
   // ==========================================
-  // CLOSE MOBILE SIDEBAR
+  // SIDEBAR
   // ==========================================
 
   const closeSidebar = () => {
@@ -1457,17 +1631,103 @@ function Dashboard() {
   // STATISTICS
   // ==========================================
 
-  const activeUsers = useMemo(() => {
-    return users.filter((item) => item.isActive).length;
-  }, [users]);
+  const activeUsers = useMemo(
+    () => users.filter((item) => item.isActive).length,
+    [users],
+  );
 
-  const inactiveUsers = useMemo(() => {
-    return users.filter((item) => !item.isActive).length;
-  }, [users]);
+  const inactiveUsers = useMemo(
+    () => users.filter((item) => !item.isActive).length,
+    [users],
+  );
 
-  const adminUsers = useMemo(() => {
-    return users.filter((item) => item.role === "admin").length;
-  }, [users]);
+  const adminUsers = useMemo(
+    () => users.filter((item) => item.role === "admin").length,
+    [users],
+  );
+
+  // ==========================================
+  // FILTERED PROFILES
+  // ==========================================
+
+  const filteredProfiles = useMemo(() => {
+    const search = profileSearch.trim().toLowerCase();
+
+    if (!search) return users;
+
+    return users.filter((item) => {
+      const name = item.name?.toLowerCase() || "";
+
+      const email = item.email?.toLowerCase() || "";
+
+      const role = item.role?.toLowerCase() || "";
+
+      return (
+        name.includes(search) || email.includes(search) || role.includes(search)
+      );
+    });
+  }, [users, profileSearch]);
+
+  // ==========================================
+  // ACTIVITY LABEL
+  // ==========================================
+
+  const getActivityLabel = (activity) => {
+    if (activityLabels[activity.action]) {
+      return activityLabels[activity.action];
+    }
+
+    if (activity.activity) {
+      return activity.activity;
+    }
+
+    if (activity.action) {
+      return activity.action
+        .replaceAll("_", " ")
+        .toLowerCase()
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+    }
+
+    return "Account activity";
+  };
+
+  // ==========================================
+  // ACTIVITY ICON
+  // ==========================================
+
+  const getActivityIcon = (activity) => {
+    if (activityIcons[activity.action]) {
+      return activityIcons[activity.action];
+    }
+
+    const action = activity.action?.toUpperCase() || "";
+
+    if (action.includes("FAILED") || action.includes("ERROR")) {
+      return "!";
+    }
+
+    if (action.includes("LOGIN") || action.includes("SUCCESS")) {
+      return "✓";
+    }
+
+    if (action.includes("REGISTER") || action.includes("CREATE")) {
+      return "+";
+    }
+
+    if (action.includes("LOGOUT")) {
+      return "↪";
+    }
+
+    if (action.includes("PASSWORD")) {
+      return "🔒";
+    }
+
+    if (action.includes("PROFILE") || action.includes("UPDATE")) {
+      return "✎";
+    }
+
+    return "•";
+  };
 
   // ==========================================
   // LOADING
@@ -1498,19 +1758,11 @@ function Dashboard() {
 
   const isAdmin = user.role === "admin";
 
-  // ==========================================
-  // DASHBOARD
-  // ==========================================
-
   return (
     <>
       <style>{styles}</style>
 
       <div className="dashboard">
-        {/* ==========================================
-            SIDEBAR OVERLAY
-        ========================================== */}
-
         {sidebarOpen && (
           <div className="sidebarOverlay" onClick={closeSidebar} />
         )}
@@ -1520,8 +1772,6 @@ function Dashboard() {
         ========================================== */}
 
         <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
-          {/* SIDEBAR HEADER */}
-
           <div className="sidebarHeader">
             <div className="logo">
               <div className="logoIcon">S</div>
@@ -1530,8 +1780,6 @@ function Dashboard() {
                 SECURE<span>HUB</span>
               </div>
             </div>
-
-            {/* MOBILE CLOSE BUTTON */}
 
             <button
               className="closeSidebar"
@@ -1545,24 +1793,58 @@ function Dashboard() {
           <div className="sidebarLabel">Workspace</div>
 
           <nav className="nav">
-            <button className="navItem active" onClick={closeSidebar}>
+            <button
+              className={`navItem ${!showProfiles ? "active" : ""}`}
+              onClick={handleBackToOverview}
+            >
               <span className="navIcon">⌂</span>
               Overview
             </button>
 
-            <button className="navItem" onClick={closeSidebar}>
+            {/* PROFILE BUTTON */}
+
+            <button
+              className={`navItem ${showProfiles ? "active" : ""}`}
+              onClick={handleProfiles}
+            >
               <span className="navIcon">♙</span>
               Profile
             </button>
 
             {isAdmin && (
-              <button className="navItem" onClick={closeSidebar}>
+              <button
+                className="navItem"
+                onClick={() => {
+                  setShowProfiles(false);
+
+                  closeSidebar();
+
+                  setTimeout(() => {
+                    document.getElementById("user-management")?.scrollIntoView({
+                      behavior: "smooth",
+                    });
+                  }, 50);
+                }}
+              >
                 <span className="navIcon">♙</span>
                 Users
               </button>
             )}
 
-            <button className="navItem" onClick={closeSidebar}>
+            <button
+              className="navItem"
+              onClick={() => {
+                setShowProfiles(false);
+
+                closeSidebar();
+
+                setTimeout(() => {
+                  document.getElementById("security-activity")?.scrollIntoView({
+                    behavior: "smooth",
+                  });
+                }, 50);
+              }}
+            >
               <span className="navIcon">◷</span>
               Activity
             </button>
@@ -1588,11 +1870,9 @@ function Dashboard() {
         ========================================== */}
 
         <div className="main">
-          {/* TOP BAR */}
+          {/* TOPBAR */}
 
           <header className="topbar">
-            {/* HAMBURGER */}
-
             <button
               className="mobileMenu"
               onClick={() => setSidebarOpen(true)}
@@ -1602,7 +1882,8 @@ function Dashboard() {
             </button>
 
             <div className="breadcrumb">
-              Dashboard / <strong>Overview</strong>
+              Dashboard /{" "}
+              <strong>{showProfiles ? "Profiles" : "Overview"}</strong>
             </div>
 
             <div className="topRight">
@@ -1612,13 +1893,11 @@ function Dashboard() {
               </button>
 
               <div className="profileMini">
-                {/* TOP PROFILE IMAGE */}
-
                 <div className="topAvatarWrapper">
                   {profileImage ? (
                     <img
                       src={profileImage}
-                      alt={user.name}
+                      alt={user.name || "User"}
                       className="topProfileImage"
                     />
                   ) : (
@@ -1635,324 +1914,673 @@ function Dashboard() {
             </div>
           </header>
 
-          {/* ==========================================
-              CONTENT
-          ========================================== */}
-
           <main className="content">
-            {/* HERO */}
+            {/* ======================================
+                ALL PROFILES VIEW
+            ====================================== */}
 
-            <section className="hero">
-              <div>
-                <div className="heroEyebrow">Personal Dashboard</div>
-
-                <h1 className="heroTitle">
-                  Welcome back, <span>{user.name}</span>
-                </h1>
-
-                <p className="heroSubtitle">
-                  Here's what's happening with your SecureHub account.
-                </p>
-              </div>
-
-              <div className="statusPill">
-                <span className="statusDot" />
-                System operational
-              </div>
-            </section>
-
-            {/* ==========================================
-                PROFILE CARD
-            ========================================== */}
-
-            <section className="profilePanel">
-              <div className="profileHero">
-                {/* PROFILE IMAGE */}
-
-                <div className="profileImageWrapper">
-                  {profileImage ? (
-                    <img
-                      src={profileImage}
-                      alt={user.name}
-                      className="profileImage"
-                    />
-                  ) : (
-                    <div className="profileBigAvatar">
-                      {getInitials(user.name)}
-                    </div>
-                  )}
-
-                  {/* EDIT IMAGE */}
-
-                  <label
-                    htmlFor="profileImageUpload"
-                    className="profileImageEdit"
-                    title="Change profile image"
-                  >
-                    ✎
-                  </label>
-
-                  <input
-                    id="profileImageUpload"
-                    type="file"
-                    accept="image/*"
-                    className="profileImageInput"
-                    onChange={handleProfileImageChange}
-                  />
-                </div>
-
-                <div>
-                  <h2>{user.name}</h2>
-
-                  <p>{user.email}</p>
-
-                  <div
-                    style={{
-                      marginTop: "9px",
-                      display: "flex",
-                      gap: "7px",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <span className="roleBadge">{user.role}</span>
-
-                    <span
-                      className={`status ${
-                        user.isActive ? "active" : "inactive"
-                      }`}
-                    >
-                      <span className="statusIndicator" />
-
-                      {user.isActive ? "Active" : "Inactive"}
-                    </span>
-
-                    {/* REMOVE IMAGE BUTTON */}
-
-                    {profileImage && (
-                      <button
-                        type="button"
-                        onClick={handleRemoveProfileImage}
-                        style={{
-                          border: "1px solid rgba(239, 68, 68, 0.2)",
-                          background: "rgba(239, 68, 68, 0.07)",
-                          color: "#fca5a5",
-                          padding: "4px 8px",
-                          borderRadius: "999px",
-                          fontSize: "9px",
-                          fontWeight: "600",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Remove Photo
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="profileDetails">
-                <div className="detail">
-                  <span className="detailLabel">Account</span>
-
-                  <span className="detailValue">Secure</span>
-                </div>
-
-                <div className="detail">
-                  <span className="detailLabel">Access</span>
-
-                  <span className="detailValue">
-                    {isAdmin ? "Administrator" : "Standard"}
-                  </span>
-                </div>
-              </div>
-            </section>
-
-            {/* PROFILE SUCCESS / ERROR */}
-
-            {(error || success) && (
-              <div
-                style={{
-                  marginBottom: "25px",
-                }}
-              >
-                {error && <div className="alert error">{error}</div>}
-
-                {success && <div className="alert success">{success}</div>}
-              </div>
-            )}
-
-            {/* ==========================================
-                STATISTICS
-            ========================================== */}
-
-            <section className="statsGrid">
-              <div className="statCard">
-                <div className="statTop">
-                  <span className="statLabel">Total Users</span>
-
-                  <div className="statIcon">♙</div>
-                </div>
-
-                <div className="statValue">{isAdmin ? users.length : "—"}</div>
-
-                <div className="statDescription">Registered accounts</div>
-              </div>
-
-              <div className="statCard">
-                <div className="statTop">
-                  <span className="statLabel">Active Users</span>
-
-                  <div className="statIcon">●</div>
-                </div>
-
-                <div className="statValue">{isAdmin ? activeUsers : "—"}</div>
-
-                <div className="statDescription">Currently active</div>
-              </div>
-
-              <div className="statCard">
-                <div className="statTop">
-                  <span className="statLabel">Administrators</span>
-
-                  <div className="statIcon">◈</div>
-                </div>
-
-                <div className="statValue">{isAdmin ? adminUsers : "—"}</div>
-
-                <div className="statDescription">Users with admin access</div>
-              </div>
-
-              <div className="statCard">
-                <div className="statTop">
-                  <span className="statLabel">Inactive</span>
-
-                  <div className="statIcon">◌</div>
-                </div>
-
-                <div className="statValue">{isAdmin ? inactiveUsers : "—"}</div>
-
-                <div className="statDescription">Inactive accounts</div>
-              </div>
-            </section>
-
-            {/* ==========================================
-                ADMIN USER MANAGEMENT
-            ========================================== */}
-
-            {isAdmin && (
-              <section className="panel">
-                <div className="panelHeader">
+            {showProfiles ? (
+              <>
+                <section className="hero">
                   <div>
-                    <h2 className="panelTitle">User Management</h2>
+                    <div className="heroEyebrow">User Directory</div>
 
-                    <p className="panelSubtitle">
-                      Manage registered SecureHub users
+                    <h1 className="heroTitle">
+                      All <span>Profiles</span>
+                    </h1>
+
+                    <p className="heroSubtitle">
+                      View and manage all registered SecureHub profiles.
                     </p>
                   </div>
 
-                  <button
-                    className="refreshButton"
-                    onClick={fetchUsers}
-                    disabled={loadingUsers}
+                  <div className="statusPill">
+                    <span className="statusDot" />
+                    {users.length} Profiles
+                  </div>
+                </section>
+
+                {(error || success) && (
+                  <div
+                    style={{
+                      marginBottom: "25px",
+                    }}
                   >
-                    <span
-                      className={`refreshIcon ${
-                        loadingUsers ? "spinning" : ""
-                      }`}
-                    >
-                      ↻
-                    </span>
+                    {error && <div className="alert error">{error}</div>}
 
-                    {loadingUsers ? "Refreshing" : "Refresh"}
-                  </button>
-                </div>
+                    {success && <div className="alert success">{success}</div>}
+                  </div>
+                )}
 
-                {/* TABLE */}
+                <section className="panel">
+                  <div className="panelHeader">
+                    <div>
+                      <h2 className="panelTitle">All User Profiles</h2>
 
-                <div className="tableWrapper">
-                  {loadingUsers ? (
-                    <div className="loading">
-                      <div className="loadingSpinner" />
-                      Loading users...
+                      <p className="panelSubtitle">
+                        Search, view, edit, or delete registered profiles.
+                      </p>
                     </div>
-                  ) : users.length === 0 ? (
-                    <div className="empty">No registered users found.</div>
-                  ) : (
-                    <table className="table">
-                      <thead>
-                        <tr>
-                          <th>User</th>
 
-                          <th>Email</th>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "8px",
+                      }}
+                    >
+                      <button
+                        className="backButton"
+                        onClick={handleBackToOverview}
+                      >
+                        ← Back
+                      </button>
 
-                          <th>Role</th>
+                      <button
+                        className="refreshButton"
+                        onClick={fetchUsers}
+                        disabled={loadingUsers}
+                      >
+                        <span
+                          className={`refreshIcon ${
+                            loadingUsers ? "spinning" : ""
+                          }`}
+                        >
+                          ↻
+                        </span>
 
-                          <th>Status</th>
+                        {loadingUsers ? "Refreshing" : "Refresh"}
+                      </button>
+                    </div>
+                  </div>
 
-                          <th>Actions</th>
-                        </tr>
-                      </thead>
+                  {/* SEARCH */}
 
-                      <tbody>
-                        {users.map((item, index) => (
-                          <tr
-                            key={item._id}
+                  <div className="profileToolbar">
+                    <div className="searchWrapper">
+                      <span className="searchIcon">⌕</span>
+
+                      <input
+                        type="text"
+                        className="searchInput"
+                        placeholder="Search by name, email or role..."
+                        value={profileSearch}
+                        onChange={(e) => setProfileSearch(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="profileCount">
+                      Showing{" "}
+                      <strong
+                        style={{
+                          color: "#d4d4d8",
+                        }}
+                      >
+                        {filteredProfiles.length}
+                      </strong>{" "}
+                      of{" "}
+                      <strong
+                        style={{
+                          color: "#d4d4d8",
+                        }}
+                      >
+                        {users.length}
+                      </strong>{" "}
+                      profiles
+                    </div>
+                  </div>
+
+                  {/* PROFILE TABLE */}
+
+                  <div className="tableWrapper">
+                    {loadingUsers ? (
+                      <div className="loading">
+                        <div className="loadingSpinner" />
+                        Loading profiles...
+                      </div>
+                    ) : filteredProfiles.length === 0 ? (
+                      <div className="empty">
+                        {profileSearch
+                          ? "No profiles match your search."
+                          : "No registered profiles found."}
+                      </div>
+                    ) : (
+                      <table className="table">
+                        <thead>
+                          <tr>
+                            <th>Profile</th>
+
+                            <th>Email</th>
+
+                            <th>Role</th>
+
+                            <th>Status</th>
+
+                            <th>Joined</th>
+
+                            <th>Actions</th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          {filteredProfiles.map((item, index) => (
+                            <tr
+                              key={item._id}
+                              style={{
+                                animationDelay: `${index * 0.04}s`,
+                              }}
+                            >
+                              {/* PROFILE */}
+
+                              <td>
+                                <div className="userCell">
+                                  <div className="tableAvatar">
+                                    {getInitials(item.name || "")}
+                                  </div>
+
+                                  <div className="profileUserInfo">
+                                    <div className="profileUserName">
+                                      {item.name || "User"}
+                                    </div>
+
+                                    <div className="profileUserId">
+                                      ID: {item._id || "—"}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* EMAIL */}
+
+                              <td>{item.email || "—"}</td>
+
+                              {/* ROLE */}
+
+                              <td>
+                                <span className="roleBadge">
+                                  {item.role || "user"}
+                                </span>
+                              </td>
+
+                              {/* STATUS */}
+
+                              <td>
+                                <span
+                                  className={`status ${
+                                    item.isActive ? "active" : "inactive"
+                                  }`}
+                                >
+                                  <span className="statusIndicator" />
+
+                                  {item.isActive ? "Active" : "Inactive"}
+                                </span>
+                              </td>
+
+                              {/* JOINED */}
+
+                              <td>
+                                {item.createdAt
+                                  ? new Date(
+                                      item.createdAt,
+                                    ).toLocaleDateString()
+                                  : "—"}
+                              </td>
+
+                              {/* ACTIONS */}
+
+                              <td>
+                                <div className="actions">
+                                  <button
+                                    className="actionButton editButton"
+                                    onClick={() => handleEditUser(item._id)}
+                                  >
+                                    Edit
+                                  </button>
+
+                                  <button
+                                    className="actionButton deleteButton"
+                                    onClick={() => handleDeleteUser(item._id)}
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                </section>
+              </>
+            ) : (
+              /* ======================================
+                 NORMAL OVERVIEW
+              ====================================== */
+
+              <>
+                {/* HERO */}
+
+                <section className="hero">
+                  <div>
+                    <div className="heroEyebrow">Personal Dashboard</div>
+
+                    <h1 className="heroTitle">
+                      Welcome back, <span>{user.name}</span>
+                    </h1>
+
+                    <p className="heroSubtitle">
+                      Here's what's happening with your SecureHub account.
+                    </p>
+                  </div>
+
+                  <div className="statusPill">
+                    <span className="statusDot" />
+                    System operational
+                  </div>
+                </section>
+
+                {/* PROFILE */}
+
+                <section className="profilePanel">
+                  <div className="profileHero">
+                    <div className="profileImageWrapper">
+                      {profileImage ? (
+                        <img
+                          src={profileImage}
+                          alt={user.name || "User"}
+                          className="profileImage"
+                        />
+                      ) : (
+                        <div className="profileBigAvatar">
+                          {getInitials(user.name)}
+                        </div>
+                      )}
+
+                      <label
+                        htmlFor="profileImageUpload"
+                        className="profileImageEdit"
+                        title="Change profile image"
+                      >
+                        ✎
+                      </label>
+
+                      <input
+                        id="profileImageUpload"
+                        type="file"
+                        accept="image/*"
+                        className="profileImageInput"
+                        onChange={handleProfileImageChange}
+                      />
+                    </div>
+
+                    <div>
+                      <h2>{user.name}</h2>
+
+                      <p>{user.email}</p>
+
+                      <div
+                        style={{
+                          marginTop: "9px",
+                          display: "flex",
+                          gap: "7px",
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <span className="roleBadge">{user.role}</span>
+
+                        <span
+                          className={`status ${
+                            user.isActive ? "active" : "inactive"
+                          }`}
+                        >
+                          <span className="statusIndicator" />
+
+                          {user.isActive ? "Active" : "Inactive"}
+                        </span>
+
+                        {profileImage && (
+                          <button
+                            type="button"
+                            onClick={handleRemoveProfileImage}
                             style={{
-                              animationDelay: `${index * 0.04}s`,
+                              border: "1px solid rgba(239,68,68,.2)",
+                              background: "rgba(239,68,68,.07)",
+                              color: "#fca5a5",
+                              padding: "4px 8px",
+                              borderRadius: "999px",
+                              fontSize: "9px",
+                              fontWeight: "600",
+                              cursor: "pointer",
                             }}
                           >
-                            <td>
-                              <div className="userCell">
-                                <div className="tableAvatar">
-                                  {getInitials(item.name)}
-                                </div>
+                            Remove Photo
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
 
-                                {item.name}
-                              </div>
-                            </td>
+                  <div className="profileDetails">
+                    <div className="detail">
+                      <span className="detailLabel">Account</span>
 
-                            <td>{item.email}</td>
+                      <span className="detailValue">Secure</span>
+                    </div>
 
-                            <td>
-                              <span className="roleBadge">{item.role}</span>
-                            </td>
+                    <div className="detail">
+                      <span className="detailLabel">Access</span>
 
-                            <td>
-                              <span
-                                className={`status ${
-                                  item.isActive ? "active" : "inactive"
+                      <span className="detailValue">
+                        {isAdmin ? "Administrator" : "Standard"}
+                      </span>
+                    </div>
+                  </div>
+                </section>
+
+                {(error || success) && (
+                  <div
+                    style={{
+                      marginBottom: "25px",
+                    }}
+                  >
+                    {error && <div className="alert error">{error}</div>}
+
+                    {success && <div className="alert success">{success}</div>}
+                  </div>
+                )}
+
+                {/* STATISTICS */}
+
+                <section className="statsGrid">
+                  <div className="statCard">
+                    <div className="statTop">
+                      <span className="statLabel">Total Users</span>
+
+                      <div className="statIcon">♙</div>
+                    </div>
+
+                    <div className="statValue">
+                      {isAdmin ? users.length : "—"}
+                    </div>
+
+                    <div className="statDescription">Registered accounts</div>
+                  </div>
+
+                  <div className="statCard">
+                    <div className="statTop">
+                      <span className="statLabel">Active Users</span>
+
+                      <div className="statIcon">●</div>
+                    </div>
+
+                    <div className="statValue">
+                      {isAdmin ? activeUsers : "—"}
+                    </div>
+
+                    <div className="statDescription">Currently active</div>
+                  </div>
+
+                  <div className="statCard">
+                    <div className="statTop">
+                      <span className="statLabel">Administrators</span>
+
+                      <div className="statIcon">◈</div>
+                    </div>
+
+                    <div className="statValue">
+                      {isAdmin ? adminUsers : "—"}
+                    </div>
+
+                    <div className="statDescription">
+                      Users with admin access
+                    </div>
+                  </div>
+
+                  <div className="statCard">
+                    <div className="statTop">
+                      <span className="statLabel">Inactive</span>
+
+                      <div className="statIcon">◌</div>
+                    </div>
+
+                    <div className="statValue">
+                      {isAdmin ? inactiveUsers : "—"}
+                    </div>
+
+                    <div className="statDescription">Inactive accounts</div>
+                  </div>
+                </section>
+
+                {/* USER MANAGEMENT */}
+
+                {isAdmin && (
+                  <section id="user-management" className="panel">
+                    <div className="panelHeader">
+                      <div>
+                        <h2 className="panelTitle">User Management</h2>
+
+                        <p className="panelSubtitle">
+                          Manage registered SecureHub users
+                        </p>
+                      </div>
+
+                      <button
+                        className="refreshButton"
+                        onClick={fetchUsers}
+                        disabled={loadingUsers}
+                      >
+                        <span
+                          className={`refreshIcon ${
+                            loadingUsers ? "spinning" : ""
+                          }`}
+                        >
+                          ↻
+                        </span>
+
+                        {loadingUsers ? "Refreshing" : "Refresh"}
+                      </button>
+                    </div>
+
+                    <div className="tableWrapper">
+                      {loadingUsers ? (
+                        <div className="loading">
+                          <div className="loadingSpinner" />
+                          Loading users...
+                        </div>
+                      ) : users.length === 0 ? (
+                        <div className="empty">No registered users found.</div>
+                      ) : (
+                        <table className="table">
+                          <thead>
+                            <tr>
+                              <th>User</th>
+
+                              <th>Email</th>
+
+                              <th>Role</th>
+
+                              <th>Status</th>
+
+                              <th>Actions</th>
+                            </tr>
+                          </thead>
+
+                          <tbody>
+                            {users.map((item, index) => (
+                              <tr
+                                key={item._id}
+                                style={{
+                                  animationDelay: `${index * 0.04}s`,
+                                }}
+                              >
+                                <td>
+                                  <div className="userCell">
+                                    <div className="tableAvatar">
+                                      {getInitials(item.name)}
+                                    </div>
+
+                                    {item.name}
+                                  </div>
+                                </td>
+
+                                <td>{item.email}</td>
+
+                                <td>
+                                  <span className="roleBadge">{item.role}</span>
+                                </td>
+
+                                <td>
+                                  <span
+                                    className={`status ${
+                                      item.isActive ? "active" : "inactive"
+                                    }`}
+                                  >
+                                    <span className="statusIndicator" />
+
+                                    {item.isActive ? "Active" : "Inactive"}
+                                  </span>
+                                </td>
+
+                                <td>
+                                  <div className="actions">
+                                    <button
+                                      className="actionButton editButton"
+                                      onClick={() => handleEditUser(item._id)}
+                                    >
+                                      Edit
+                                    </button>
+
+                                    <button
+                                      className="actionButton deleteButton"
+                                      onClick={() => handleDeleteUser(item._id)}
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  </section>
+                )}
+
+                {/* SECURITY ACTIVITY */}
+
+                {isAdmin && (
+                  <section
+                    id="security-activity"
+                    className="panel"
+                    style={{
+                      marginTop: "25px",
+                    }}
+                  >
+                    <div className="panelHeader">
+                      <div>
+                        <h2 className="panelTitle">Recent Security Activity</h2>
+
+                        <p className="panelSubtitle">
+                          Monitor authentication and account activity
+                        </p>
+                      </div>
+
+                      <button
+                        className="refreshButton"
+                        onClick={fetchActivities}
+                        disabled={loadingActivities}
+                      >
+                        <span
+                          className={`refreshIcon ${
+                            loadingActivities ? "spinning" : ""
+                          }`}
+                        >
+                          ↻
+                        </span>
+
+                        {loadingActivities ? "Refreshing" : "Refresh"}
+                      </button>
+                    </div>
+
+                    {loadingActivities ? (
+                      <div className="loading">
+                        <div className="loadingSpinner" />
+                        Loading activity...
+                      </div>
+                    ) : activities.length === 0 ? (
+                      <div className="activityEmpty">
+                        No security activity found.
+                      </div>
+                    ) : (
+                      <div className="activityList">
+                        {activities.map((activity, index) => {
+                          const action = activity?.action;
+
+                          const isFailed = action === "LOGIN_FAILED";
+
+                          const isSuccess = action === "LOGIN_SUCCESS";
+
+                          const label = getActivityLabel(activity);
+
+                          const icon = getActivityIcon(activity);
+
+                          const userName =
+                            activity?.userName ||
+                            activity?.user?.name ||
+                            activity?.user?.email ||
+                            activity?.email ||
+                            (activity?.userRole === "admin" ? "Admin" : "User");
+
+                          return (
+                            <div
+                              className="activityItem"
+                              key={
+                                activity?._id ||
+                                `${action || "activity"}-${
+                                  activity?.createdAt || index
+                                }-${index}`
+                              }
+                            >
+                              <div
+                                className={`activityIcon ${
+                                  isFailed
+                                    ? "failed"
+                                    : isSuccess
+                                      ? "success"
+                                      : ""
                                 }`}
                               >
-                                <span className="statusIndicator" />
-
-                                {item.isActive ? "Active" : "Inactive"}
-                              </span>
-                            </td>
-
-                            <td>
-                              <div className="actions">
-                                <button
-                                  className="actionButton editButton"
-                                  onClick={() => handleEditUser(item._id)}
-                                >
-                                  Edit
-                                </button>
-
-                                <button
-                                  className="actionButton deleteButton"
-                                  onClick={() => handleDeleteUser(item._id)}
-                                >
-                                  Delete
-                                </button>
+                                {icon}
                               </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-              </section>
+
+                              <div className="activityInfo">
+                                <div className="activityAction">{label}</div>
+
+                                <div className="activityUser">{userName}</div>
+
+                                {activity?.details && (
+                                  <div className="activityDetails">
+                                    {activity.details}
+                                  </div>
+                                )}
+                              </div>
+
+                              {activity?.createdAt && (
+                                <div className="activityTime">
+                                  {new Date(
+                                    activity.createdAt,
+                                  ).toLocaleString()}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </section>
+                )}
+              </>
             )}
           </main>
         </div>

@@ -1,26 +1,24 @@
-const Activity = require("../models/Activity");
+import Activity from "../models/Activity.js";
 
-const getActivities = async (req, res) => {
+export const getActivities = async (req, res) => {
   try {
     const activities = await Activity.find()
-      .populate("user", "name email role")
+      .populate("user", "name email")
       .sort({ createdAt: -1 })
-      .limit(50);
+      .limit(100)
+      .lean();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       activities,
     });
   } catch (error) {
-    console.error("Get activities error:", error);
+    console.error("GET ACTIVITIES ERROR:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to fetch activities",
+      error: error.message,
     });
   }
-};
-
-module.exports = {
-  getActivities,
 };

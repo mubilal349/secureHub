@@ -1,37 +1,39 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const activitySchema = new mongoose.Schema(
   {
+    activity: {
+      type: String,
+      required: true,
+    },
+
+    type: {
+      type: String,
+      required: true,
+    },
+
+    description: {
+      type: String,
+      default: "",
+    },
+
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: false,
+      default: null,
     },
-
-    action: {
+    userRole: {
       type: String,
-      enum: [
-        "LOGIN_SUCCESS",
-        "LOGIN_FAILED",
-        "REGISTER",
-        "LOGOUT",
-        "PASSWORD_CHANGED",
-        "PROFILE_UPDATED",
-      ],
-      required: true,
+      enum: ["user", "admin"],
+      default: "user",
     },
 
     ipAddress: {
       type: String,
-      default: null,
+      default: "",
     },
 
     userAgent: {
-      type: String,
-      default: null,
-    },
-
-    details: {
       type: String,
       default: "",
     },
@@ -41,4 +43,6 @@ const activitySchema = new mongoose.Schema(
   },
 );
 
-module.exports = mongoose.model("Activity", activitySchema);
+const Activity = mongoose.model("Activity", activitySchema);
+
+export default Activity;
