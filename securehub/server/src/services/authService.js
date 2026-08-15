@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import createActivity from "../utils/createActivity.js";
 
 export const registerUser = async ({ name, email, password }) => {
   const existingUser = await User.findOne({ email });
@@ -15,55 +16,122 @@ export const registerUser = async ({ name, email, password }) => {
     name,
     email,
     password: hashedPassword,
+    failedLoginAttempts: 0,
+    lockUntil: null,
   });
 
-  return {
-    id: user._id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    isVerified: user.isVerified,
-    isActive: user.isActive,
-  };
+  return user;
 };
 
-export const loginUser = async ({ email, password }) => {
-  // 1. Find user
+// ==========================================
+// LOGIN
+// ==========================================
+
+export const loginUser = async ({ email, password, req }) => {
   const user = await User.findOne({ email });
 
   if (!user) {
     throw new Error("Invalid email or password");
   }
 
-  // 2. Compare password
-  const isPasswordCorrect = await bcrypt.compare(password, user.password);
+  // ==========================================
+  // CHECK LOCK
+  // ==========================================
 
-  if (!isPasswordCorrect) {
-    throw new Error("Invalid email or password");
+  if (user.lockUntil && user.lockUntil.getTime() > Date.now()) {
+    const remainingMinutes = Math.ceil(
+      (user.lockUntil.getTime() - Date.now()) / 60000,
+    );
+
+    throw new Error(
+      `Your account is locked. Try again in ${remainingMinutes} minute(s).`,
+    );
   }
 
-  // 3. Create JWT
+  // ==========================================
+  // LOCK EXPIRED
+  // ==========================================
+
+  if (user.lockUntil && user.lockUntil.getTime() <= Date.now()) {
+    user.lockUntil = null;
+    user.failedLoginAttempts = 0;
+
+    await user.save();
+  }
+
+  // ==========================================
+  // CHECK PASSWORD
+  // ==========================================
+
+  const passwordValid = await bcrypt.compare(password, user.password);
+
+  // ==========================================
+  // WRONG PASSWORD
+  // ==========================================
+
+  if (!passwordValid) {
+    user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+
+    // ========================================
+    // LOCK AFTER 4 ATTEMPTS
+    // ========================================
+
+    if (user.failedLoginAttempts >= 4) {
+      user.lockUntil = new Date(Date.now() + 60 * 60 * 1000);
+
+      await user.save();
+
+      await createActivity({
+        user: user._id,
+        userRole: user.role,
+        type: "ACCOUNT_LOCKED",
+        activity: "Account Locked",
+        description:
+          "Account automatically locked after 4 failed login attempts",
+        req,
+      });
+
+      throw new Error(
+        "Too many failed login attempts. Your account has been locked for 60 minutes.",
+      );
+    }
+
+    await user.save();
+
+    const remaining = 4 - user.failedLoginAttempts;
+
+    throw new Error(
+      `Invalid email or password. ${remaining} attempt(s) remaining.`,
+    );
+  }
+
+  // ==========================================
+  // SUCCESSFUL LOGIN
+  // ==========================================
+
+  user.failedLoginAttempts = 0;
+  user.lockUntil = null;
+
+  await user.save();
+
+  // ==========================================
+  // JWT
+  // ==========================================
+
   const token = jwt.sign(
     {
-      userId: user._id,
+      id: user._id,
+      email: user.email,
       role: user.role,
     },
     process.env.JWT_SECRET,
     {
-      expiresIn: "1h",
+      expiresIn: "1d",
     },
   );
 
-  // 4. Return token + user information
   return {
     token,
-    user: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      isVerified: user.isVerified,
-      isActive: user.isActive,
-    },
+    user,
   };
 };

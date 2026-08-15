@@ -69,6 +69,8 @@ export const updateUser = async (req, res) => {
         role: user.role,
         isVerified: user.isVerified,
         isActive: user.isActive,
+        failedLoginAttempts: user.failedLoginAttempts,
+        lockUntil: user.lockUntil,
       },
     });
   } catch (error) {

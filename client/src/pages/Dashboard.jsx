@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import TopToBack from "../components/TopToBack";
 
 const API_BASE_URL = "http://localhost:8000";
 
@@ -1178,6 +1179,7 @@ const activityLabels = {
   LOGOUT: "User logged out",
   PASSWORD_CHANGED: "Password changed",
   PROFILE_UPDATED: "Profile updated",
+  ACCOUNT_LOCKED: "Account locked",
 };
 
 const activityIcons = {
@@ -1187,6 +1189,7 @@ const activityIcons = {
   LOGOUT: "↪",
   PASSWORD_CHANGED: "🔒",
   PROFILE_UPDATED: "✎",
+  ACCOUNT_LOCKED: "🔒",
 };
 
 function Dashboard() {
@@ -1208,6 +1211,40 @@ function Dashboard() {
   // NEW: Profile view
   const [showProfiles, setShowProfiles] = useState(false);
   const [profileSearch, setProfileSearch] = useState("");
+
+  const [systemSettings, setSystemSettings] = useState({
+    sessionTimeout: 30,
+    language: "English",
+  });
+
+  const [settingsSaved, setSettingsSaved] = useState(false);
+
+  const [activeTab, setActiveTab] = useState("overview");
+
+  useEffect(() => {
+    const savedSettings = localStorage.getItem("secureHubSystemSettings");
+
+    if (savedSettings) {
+      try {
+        setSystemSettings(JSON.parse(savedSettings));
+      } catch (error) {
+        console.error("Failed to load system settings:", error);
+      }
+    }
+  }, []);
+
+  const handleSaveSettings = () => {
+    localStorage.setItem(
+      "secureHubSystemSettings",
+      JSON.stringify(systemSettings),
+    );
+
+    setSettingsSaved(true);
+
+    setTimeout(() => {
+      setSettingsSaved(false);
+    }, 3000);
+  };
 
   // ==========================================
   // GET LOGGED-IN USER
@@ -1794,8 +1831,14 @@ function Dashboard() {
 
           <nav className="nav">
             <button
-              className={`navItem ${!showProfiles ? "active" : ""}`}
-              onClick={handleBackToOverview}
+              className={`navItem ${
+                activeTab === "overview" && !showProfiles ? "active" : ""
+              }`}
+              onClick={() => {
+                setActiveTab("overview");
+                setShowProfiles(false);
+                closeSidebar();
+              }}
             >
               <span className="navIcon">⌂</span>
               Overview
@@ -1805,10 +1848,14 @@ function Dashboard() {
 
             <button
               className={`navItem ${showProfiles ? "active" : ""}`}
-              onClick={handleProfiles}
+              onClick={() => {
+                setActiveTab("overview");
+                setShowProfiles(true);
+                closeSidebar();
+              }}
             >
               <span className="navIcon">♙</span>
-              Profile
+              All Profiles
             </button>
 
             {isAdmin && (
@@ -1849,7 +1896,14 @@ function Dashboard() {
               Activity
             </button>
 
-            <button className="navItem" onClick={closeSidebar}>
+            <button
+              className={`navItem ${activeTab === "settings" ? "active" : ""}`}
+              onClick={() => {
+                setActiveTab("settings");
+                setShowProfiles(false);
+                closeSidebar();
+              }}
+            >
               <span className="navIcon">⚙</span>
               Settings
             </button>
@@ -1918,6 +1972,246 @@ function Dashboard() {
             {/* ======================================
                 ALL PROFILES VIEW
             ====================================== */}
+
+            {activeTab === "settings" && (
+              <div
+                style={{
+                  width: "100%",
+                  animation: "settingsFadeIn 0.3s ease",
+                }}
+              >
+                {/* Header */}
+                <div
+                  style={{
+                    marginBottom: "25px",
+                  }}
+                >
+                  <h1
+                    style={{
+                      margin: 0,
+                      color: "#f4f4f5",
+                      fontSize: "28px",
+                      fontWeight: "700",
+                      letterSpacing: "-0.5px",
+                    }}
+                  >
+                    ⚙ System Settings
+                  </h1>
+
+                  <p
+                    style={{
+                      margin: "8px 0 0",
+                      color: "#71717a",
+                      fontSize: "13px",
+                    }}
+                  >
+                    Configure your SecureHub system preferences.
+                  </p>
+                </div>
+
+                {/* Settings Card */}
+                <div
+                  style={{
+                    width: "100%",
+                    background: "rgba(255,255,255,0.025)",
+                    border: "1px solid rgba(255,255,255,0.07)",
+                    borderRadius: "16px",
+                    overflow: "hidden",
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+                  }}
+                >
+                  {/* ================================
+          SESSION TIMEOUT
+      ================================= */}
+
+                  <div
+                    style={{
+                      minHeight: "95px",
+                      padding: "24px 26px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "30px",
+                      borderBottom: "1px solid rgba(255,255,255,0.06)",
+                    }}
+                  >
+                    <div
+                      style={{
+                        flex: 1,
+                      }}
+                    >
+                      <h3
+                        style={{
+                          margin: "0 0 7px",
+                          color: "#f4f4f5",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                        }}
+                      >
+                        Session Timeout
+                      </h3>
+
+                      <p
+                        style={{
+                          margin: 0,
+                          color: "#71717a",
+                          fontSize: "12px",
+                          lineHeight: "1.6",
+                        }}
+                      >
+                        Automatically log out after a period of inactivity.
+                      </p>
+                    </div>
+
+                    <select
+                      value={systemSettings.sessionTimeout}
+                      onChange={(e) =>
+                        setSystemSettings({
+                          ...systemSettings,
+                          sessionTimeout: Number(e.target.value),
+                        })
+                      }
+                      style={{
+                        width: "180px",
+                        padding: "11px 13px",
+                        borderRadius: "9px",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        background: "#111118",
+                        color: "#e4e4e7",
+                        fontSize: "12px",
+                        fontWeight: "500",
+                        outline: "none",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <option value={5}>5 minutes</option>
+                      <option value={15}>15 minutes</option>
+                      <option value={30}>30 minutes</option>
+                      <option value={60}>60 minutes</option>
+                      <option value={120}>2 hours</option>
+                    </select>
+                  </div>
+
+                  {/* ================================
+          LANGUAGE
+      ================================= */}
+
+                  <div
+                    style={{
+                      minHeight: "95px",
+                      padding: "24px 26px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "30px",
+                      borderBottom: "1px solid rgba(255,255,255,0.06)",
+                    }}
+                  >
+                    <div
+                      style={{
+                        flex: 1,
+                      }}
+                    >
+                      <h3
+                        style={{
+                          margin: "0 0 7px",
+                          color: "#f4f4f5",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                        }}
+                      >
+                        Language
+                      </h3>
+
+                      <p
+                        style={{
+                          margin: 0,
+                          color: "#71717a",
+                          fontSize: "12px",
+                          lineHeight: "1.6",
+                        }}
+                      >
+                        Select your dashboard language.
+                      </p>
+                    </div>
+
+                    <select
+                      value={systemSettings.language}
+                      onChange={(e) =>
+                        setSystemSettings({
+                          ...systemSettings,
+                          language: e.target.value,
+                        })
+                      }
+                      style={{
+                        width: "180px",
+                        padding: "11px 13px",
+                        borderRadius: "9px",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        background: "#111118",
+                        color: "#e4e4e7",
+                        fontSize: "12px",
+                        fontWeight: "500",
+                        outline: "none",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <option value="English">English</option>
+                      <option value="Urdu">Urdu</option>
+                    </select>
+                  </div>
+
+                  {/* ================================
+          SAVE SETTINGS
+      ================================= */}
+
+                  <div
+                    style={{
+                      minHeight: "80px",
+                      padding: "20px 26px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "15px",
+                      background: "rgba(0,0,0,0.08)",
+                    }}
+                  >
+                    <button
+                      onClick={handleSaveSettings}
+                      style={{
+                        padding: "11px 18px",
+                        border: "none",
+                        borderRadius: "9px",
+                        background: "#6366f1",
+                        color: "#ffffff",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        cursor: "pointer",
+                      }}
+                    >
+                      ✓ Save Settings
+                    </button>
+
+                    {settingsSaved && (
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          padding: "8px 12px",
+                          borderRadius: "8px",
+                          background: "rgba(34,197,94,0.08)",
+                          border: "1px solid rgba(34,197,94,0.15)",
+                          color: "#86efac",
+                          fontSize: "11px",
+                          fontWeight: "600",
+                        }}
+                      >
+                        ✓ Settings saved successfully
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {showProfiles ? (
               <>
@@ -2104,15 +2398,28 @@ function Dashboard() {
                               {/* STATUS */}
 
                               <td>
-                                <span
-                                  className={`status ${
-                                    item.isActive ? "active" : "inactive"
-                                  }`}
-                                >
-                                  <span className="statusIndicator" />
-
-                                  {item.isActive ? "Active" : "Inactive"}
-                                </span>
+                                {item.lockUntil &&
+                                new Date(item.lockUntil) > new Date() ? (
+                                  <span
+                                    className="status inactive"
+                                    style={{
+                                      background: "rgba(239,68,68,.12)",
+                                      color: "#fca5a5",
+                                    }}
+                                  >
+                                    <span className="statusIndicator" />
+                                    🔒 Locked
+                                  </span>
+                                ) : (
+                                  <span
+                                    className={`status ${
+                                      item.isActive ? "active" : "inactive"
+                                    }`}
+                                  >
+                                    <span className="statusIndicator" />
+                                    {item.isActive ? "Active" : "Inactive"}
+                                  </span>
+                                )}
                               </td>
 
                               {/* JOINED */}
@@ -2406,60 +2713,92 @@ function Dashboard() {
                           </thead>
 
                           <tbody>
-                            {users.map((item, index) => (
-                              <tr
-                                key={item._id}
-                                style={{
-                                  animationDelay: `${index * 0.04}s`,
-                                }}
-                              >
-                                <td>
-                                  <div className="userCell">
-                                    <div className="tableAvatar">
-                                      {getInitials(item.name)}
+                            {users.map((item, index) => {
+                              // Debug locked account information
+                              console.log("USER STATUS:", {
+                                name: item.name,
+                                isActive: item.isActive,
+                                failedLoginAttempts: item.failedLoginAttempts,
+                                lockUntil: item.lockUntil,
+                                isLocked:
+                                  item.lockUntil &&
+                                  new Date(item.lockUntil) > new Date(),
+                              });
+
+                              return (
+                                <tr
+                                  key={item._id}
+                                  style={{
+                                    animationDelay: `${index * 0.04}s`,
+                                  }}
+                                >
+                                  <td>
+                                    <div className="userCell">
+                                      <div className="tableAvatar">
+                                        {getInitials(item.name)}
+                                      </div>
+
+                                      {item.name}
                                     </div>
+                                  </td>
 
-                                    {item.name}
-                                  </div>
-                                </td>
+                                  <td>{item.email}</td>
 
-                                <td>{item.email}</td>
+                                  <td>
+                                    <span className="roleBadge">
+                                      {item.role}
+                                    </span>
+                                  </td>
 
-                                <td>
-                                  <span className="roleBadge">{item.role}</span>
-                                </td>
+                                  {/* USER STATUS */}
+                                  <td>
+                                    {item.lockUntil &&
+                                    new Date(item.lockUntil) > new Date() ? (
+                                      <span
+                                        className="status inactive"
+                                        style={{
+                                          background: "rgba(239,68,68,.12)",
+                                          color: "#fca5a5",
+                                        }}
+                                      >
+                                        <span className="statusIndicator" />
+                                        🔒 Locked
+                                      </span>
+                                    ) : (
+                                      <span
+                                        className={`status ${
+                                          item.isActive ? "active" : "inactive"
+                                        }`}
+                                      >
+                                        <span className="statusIndicator" />
 
-                                <td>
-                                  <span
-                                    className={`status ${
-                                      item.isActive ? "active" : "inactive"
-                                    }`}
-                                  >
-                                    <span className="statusIndicator" />
+                                        {item.isActive ? "Active" : "Inactive"}
+                                      </span>
+                                    )}
+                                  </td>
 
-                                    {item.isActive ? "Active" : "Inactive"}
-                                  </span>
-                                </td>
+                                  <td>
+                                    <div className="actions">
+                                      <button
+                                        className="actionButton editButton"
+                                        onClick={() => handleEditUser(item._id)}
+                                      >
+                                        Edit
+                                      </button>
 
-                                <td>
-                                  <div className="actions">
-                                    <button
-                                      className="actionButton editButton"
-                                      onClick={() => handleEditUser(item._id)}
-                                    >
-                                      Edit
-                                    </button>
-
-                                    <button
-                                      className="actionButton deleteButton"
-                                      onClick={() => handleDeleteUser(item._id)}
-                                    >
-                                      Delete
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
+                                      <button
+                                        className="actionButton deleteButton"
+                                        onClick={() =>
+                                          handleDeleteUser(item._id)
+                                        }
+                                      >
+                                        Delete
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
                           </tbody>
                         </table>
                       )}
@@ -2583,6 +2922,7 @@ function Dashboard() {
               </>
             )}
           </main>
+          <TopToBack />
         </div>
       </div>
     </>

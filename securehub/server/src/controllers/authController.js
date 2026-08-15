@@ -21,7 +21,6 @@ export const register = async (req, res) => {
       password,
     });
 
-    // Register activity
     await createActivity({
       user: user._id,
       userRole: user.role,
@@ -61,6 +60,7 @@ export const login = async (req, res) => {
     const { token, user } = await loginUser({
       email,
       password,
+      req,
     });
 
     // Successful login activity
@@ -76,19 +76,13 @@ export const login = async (req, res) => {
     return res.status(200).json({
       message: "Login successful",
       token,
-      user,
+      user: {
+        ...user.toObject(),
+        isLocked: user.lockUntil && user.lockUntil > new Date() ? true : false,
+      },
     });
   } catch (error) {
     console.error("Login error:", error.message);
-
-    // Failed login activity
-    await createActivity({
-      user: null,
-      type: "LOGIN_FAILED",
-      activity: "Failed Login Attempt",
-      description: "Failed login attempt",
-      req,
-    });
 
     return res.status(401).json({
       message: error.message,

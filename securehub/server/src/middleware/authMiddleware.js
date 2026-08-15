@@ -16,7 +16,9 @@ const authMiddleware = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    const user = await User.findById(decoded.userId).select("-password");
+    // IMPORTANT:
+    // loginUser() stores the user ID as "id"
+    const user = await User.findById(decoded.id).select("-password");
 
     if (!user) {
       return res.status(401).json({
@@ -25,6 +27,7 @@ const authMiddleware = async (req, res, next) => {
       });
     }
 
+    // Normal inactive account check
     if (!user.isActive) {
       return res.status(403).json({
         success: false,
@@ -32,6 +35,7 @@ const authMiddleware = async (req, res, next) => {
       });
     }
 
+    // Store authenticated user
     req.user = user;
 
     next();
