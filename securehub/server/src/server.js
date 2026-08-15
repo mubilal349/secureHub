@@ -5,6 +5,8 @@ import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import activityRoutes from "./routes/activityRoutes.js";
+import taskRoutes from "./routes/taskRoutes.js";
+import messageRoutes from "./routes/messageRoutes.js";
 dotenv.config();
 
 const app = express();
@@ -23,6 +25,8 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/admin/activity", activityRoutes);
+app.use("/api/tasks", taskRoutes);
+app.use("/api/messages", messageRoutes);
 
 const PORT = process.env.PORT || 8000;
 

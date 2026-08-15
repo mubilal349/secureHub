@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import TopToBack from "../components/TopToBack";
+import translations from "../translations/Translations";
+import Tasks from "./Tasks";
+import Messages from "./Messages";
 
 const API_BASE_URL = "http://localhost:8000";
 
@@ -124,20 +127,71 @@ const styles = `
   }
 }
 
+@keyframes settingsFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================================================
+   SIDEBAR
+========================================================= */
+
 .sidebar {
   width: 250px;
-  min-height: 100vh;
+
+  /* IMPORTANT: fixed viewport height */
+  height: 100vh;
+  min-height: 0;
+
   padding: 28px 18px;
+
   background: rgba(9,9,15,.78);
   border-right: 1px solid rgba(255,255,255,.07);
   backdrop-filter: blur(25px);
+
   position: fixed;
   left: 0;
   top: 0;
   z-index: 50;
+
   display: flex;
   flex-direction: column;
+
+  /* IMPORTANT: sidebar scroll */
+  overflow-y: auto;
+  overflow-x: hidden;
+
   transition: transform .3s ease;
+
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(129,140,248,.35) transparent;
+}
+
+/* Chrome / Edge / Safari scrollbar */
+
+.sidebar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(129,140,248,.35);
+  border-radius: 999px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(129,140,248,.6);
 }
 
 .sidebarHeader {
@@ -146,6 +200,8 @@ const styles = `
   justify-content: space-between;
   min-height: 45px;
   margin-bottom: 28px;
+
+  flex-shrink: 0;
 }
 
 .logo {
@@ -202,12 +258,16 @@ const styles = `
   letter-spacing: .13em;
   text-transform: uppercase;
   padding: 0 12px 10px;
+
+  flex-shrink: 0;
 }
 
 .nav {
   display: flex;
   flex-direction: column;
   gap: 6px;
+
+  flex-shrink: 0;
 }
 
 .navItem {
@@ -225,6 +285,8 @@ const styles = `
   font-size: 13px;
   font-weight: 500;
   transition: .25s;
+
+  flex-shrink: 0;
 }
 
 .navItem:hover {
@@ -251,14 +313,25 @@ const styles = `
   place-items: center;
   font-size: 14px;
   background: rgba(255,255,255,.04);
+  flex-shrink: 0;
 }
 
 .navItem.active .navIcon {
   background: linear-gradient(135deg,#6366f1,#8b5cf6);
 }
 
+/* IMPORTANT:
+   Logout stays at the bottom when there is enough space.
+   When there isn't enough space, it becomes part of
+   the sidebar's scrollable content.
+*/
+
 .sidebarBottom {
   margin-top: auto;
+  padding-top: 25px;
+  padding-bottom: 10px;
+
+  flex-shrink: 0;
 }
 
 .logoutSide {
@@ -268,6 +341,10 @@ const styles = `
 .logoutSide:hover {
   background: rgba(239,68,68,.08);
 }
+
+/* =========================================================
+   MAIN
+========================================================= */
 
 .main {
   margin-left: 250px;
@@ -520,6 +597,10 @@ const styles = `
   margin-top: 5px;
 }
 
+/* =========================================================
+   PROFILE
+========================================================= */
+
 .profilePanel {
   margin-bottom: 25px;
   padding: 25px;
@@ -640,6 +721,10 @@ const styles = `
 .profileImageInput {
   display: none;
 }
+
+/* =========================================================
+   PANELS
+========================================================= */
 
 .panel {
   border: 1px solid rgba(255,255,255,.075);
@@ -769,6 +854,10 @@ const styles = `
   white-space: nowrap;
 }
 
+/* =========================================================
+   TABLE
+========================================================= */
+
 .tableWrapper {
   overflow-x: auto;
 }
@@ -897,6 +986,10 @@ const styles = `
   background: rgba(239,68,68,.08);
 }
 
+/* =========================================================
+   ALERTS
+========================================================= */
+
 .alert {
   margin: 18px 20px 0;
   padding: 12px 14px;
@@ -915,6 +1008,10 @@ const styles = `
   background: rgba(34,197,94,.07);
   border: 1px solid rgba(34,197,94,.15);
 }
+
+/* =========================================================
+   LOADING
+========================================================= */
 
 .loading {
   min-height: 170px;
@@ -943,7 +1040,9 @@ const styles = `
   font-size: 12px;
 }
 
-/* Activity */
+/* =========================================================
+   ACTIVITY
+========================================================= */
 
 .activityList {
   display: flex;
@@ -1022,6 +1121,10 @@ const styles = `
   display: none;
 }
 
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
 @media (max-width:1100px) {
   .statsGrid {
     grid-template-columns: repeat(2,1fr);
@@ -1033,9 +1136,19 @@ const styles = `
 }
 
 @media (max-width:800px) {
+
   .sidebar {
+    width: 250px;
+
+    height: 100vh;
+    min-height: 0;
+
     transform: translateX(-105%);
+
     box-shadow: 20px 0 60px rgba(0,0,0,.45);
+
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   .sidebar.open {
@@ -1099,6 +1212,7 @@ const styles = `
 }
 
 @media (max-width:550px) {
+
   .statsGrid {
     grid-template-columns: 1fr;
   }
@@ -1208,7 +1322,6 @@ function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileImage, setProfileImage] = useState("");
 
-  // NEW: Profile view
   const [showProfiles, setShowProfiles] = useState(false);
   const [profileSearch, setProfileSearch] = useState("");
 
@@ -1217,9 +1330,27 @@ function Dashboard() {
     language: "English",
   });
 
-  const [settingsSaved, setSettingsSaved] = useState(false);
+  const [language, setLanguage] = useState(
+    localStorage.getItem("language") || "en",
+  );
+
+  const t = translations[language];
 
   const [activeTab, setActiveTab] = useState("overview");
+  const [settingsSaved, setSettingsSaved] = useState(false);
+
+  /* =========================================================
+     LANGUAGE
+  ========================================================= */
+
+  useEffect(() => {
+    document.documentElement.dir = language === "ur" ? "rtl" : "ltr";
+    document.documentElement.lang = language;
+  }, [language]);
+
+  /* =========================================================
+     LOAD SETTINGS
+  ========================================================= */
 
   useEffect(() => {
     const savedSettings = localStorage.getItem("secureHubSystemSettings");
@@ -1239,6 +1370,15 @@ function Dashboard() {
       JSON.stringify(systemSettings),
     );
 
+    /* Keep language setting synchronized */
+    if (systemSettings.language === "ur") {
+      localStorage.setItem("language", "ur");
+      setLanguage("ur");
+    } else {
+      localStorage.setItem("language", "en");
+      setLanguage("en");
+    }
+
     setSettingsSaved(true);
 
     setTimeout(() => {
@@ -1246,9 +1386,9 @@ function Dashboard() {
     }, 3000);
   };
 
-  // ==========================================
-  // GET LOGGED-IN USER
-  // ==========================================
+  /* =========================================================
+     GET LOGGED-IN USER
+  ========================================================= */
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -1284,9 +1424,9 @@ function Dashboard() {
     }
   }, [navigate]);
 
-  // ==========================================
-  // FETCH ADMIN DATA
-  // ==========================================
+  /* =========================================================
+     FETCH ADMIN DATA
+  ========================================================= */
 
   useEffect(() => {
     if (!user || user.role !== "admin") return;
@@ -1295,9 +1435,9 @@ function Dashboard() {
     fetchActivities();
   }, [user]);
 
-  // ==========================================
-  // FETCH USERS
-  // ==========================================
+  /* =========================================================
+     FETCH USERS
+  ========================================================= */
 
   const fetchUsers = async () => {
     try {
@@ -1335,9 +1475,9 @@ function Dashboard() {
     }
   };
 
-  // ==========================================
-  // FETCH ACTIVITY
-  // ==========================================
+  /* =========================================================
+     FETCH ACTIVITY
+  ========================================================= */
 
   const fetchActivities = async () => {
     try {
@@ -1414,9 +1554,9 @@ function Dashboard() {
     }
   };
 
-  // ==========================================
-  // PROFILE IMAGE
-  // ==========================================
+  /* =========================================================
+     PROFILE IMAGE
+  ========================================================= */
 
   const handleProfileImageChange = (e) => {
     const file = e.target.files?.[0];
@@ -1463,9 +1603,9 @@ function Dashboard() {
     e.target.value = "";
   };
 
-  // ==========================================
-  // REMOVE PROFILE IMAGE
-  // ==========================================
+  /* =========================================================
+     REMOVE PROFILE IMAGE
+  ========================================================= */
 
   const handleRemoveProfileImage = () => {
     const confirmed = window.confirm(
@@ -1483,9 +1623,9 @@ function Dashboard() {
     setTimeout(() => setSuccess(""), 3000);
   };
 
-  // ==========================================
-  // OPEN ALL PROFILES
-  // ==========================================
+  /* =========================================================
+     OPEN PROFILES
+  ========================================================= */
 
   const handleProfiles = async () => {
     setError("");
@@ -1501,9 +1641,9 @@ function Dashboard() {
     }
   };
 
-  // ==========================================
-  // BACK TO OVERVIEW
-  // ==========================================
+  /* =========================================================
+     BACK TO OVERVIEW
+  ========================================================= */
 
   const handleBackToOverview = () => {
     setShowProfiles(false);
@@ -1512,9 +1652,9 @@ function Dashboard() {
     setSuccess("");
   };
 
-  // ==========================================
-  // DELETE USER
-  // ==========================================
+  /* =========================================================
+     DELETE USER
+  ========================================================= */
 
   const handleDeleteUser = async (userId) => {
     const confirmed = window.confirm(
@@ -1557,9 +1697,9 @@ function Dashboard() {
     }
   };
 
-  // ==========================================
-  // EDIT USER
-  // ==========================================
+  /* =========================================================
+     EDIT USER
+  ========================================================= */
 
   const handleEditUser = async (userId) => {
     const selectedUser = users.find((item) => item._id === userId);
@@ -1629,9 +1769,9 @@ function Dashboard() {
     }
   };
 
-  // ==========================================
-  // LOGOUT
-  // ==========================================
+  /* =========================================================
+     LOGOUT
+  ========================================================= */
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -1641,17 +1781,17 @@ function Dashboard() {
     navigate("/login");
   };
 
-  // ==========================================
-  // SIDEBAR
-  // ==========================================
+  /* =========================================================
+     SIDEBAR
+  ========================================================= */
 
   const closeSidebar = () => {
     setSidebarOpen(false);
   };
 
-  // ==========================================
-  // USER INITIALS
-  // ==========================================
+  /* =========================================================
+     USER INITIALS
+  ========================================================= */
 
   const getInitials = (name = "") => {
     return (
@@ -1664,9 +1804,9 @@ function Dashboard() {
     );
   };
 
-  // ==========================================
-  // STATISTICS
-  // ==========================================
+  /* =========================================================
+     STATISTICS
+  ========================================================= */
 
   const activeUsers = useMemo(
     () => users.filter((item) => item.isActive).length,
@@ -1683,9 +1823,9 @@ function Dashboard() {
     [users],
   );
 
-  // ==========================================
-  // FILTERED PROFILES
-  // ==========================================
+  /* =========================================================
+     FILTERED PROFILES
+  ========================================================= */
 
   const filteredProfiles = useMemo(() => {
     const search = profileSearch.trim().toLowerCase();
@@ -1705,9 +1845,9 @@ function Dashboard() {
     });
   }, [users, profileSearch]);
 
-  // ==========================================
-  // ACTIVITY LABEL
-  // ==========================================
+  /* =========================================================
+     ACTIVITY LABEL
+  ========================================================= */
 
   const getActivityLabel = (activity) => {
     if (activityLabels[activity.action]) {
@@ -1722,15 +1862,15 @@ function Dashboard() {
       return activity.action
         .replaceAll("_", " ")
         .toLowerCase()
-        .replace(/\b\w/g, (char) => char.toUpperCase());
+        .replace(/\\b\\w/g, (char) => char.toUpperCase());
     }
 
     return "Account activity";
   };
 
-  // ==========================================
-  // ACTIVITY ICON
-  // ==========================================
+  /* =========================================================
+     ACTIVITY ICON
+  ========================================================= */
 
   const getActivityIcon = (activity) => {
     if (activityIcons[activity.action]) {
@@ -1766,9 +1906,9 @@ function Dashboard() {
     return "•";
   };
 
-  // ==========================================
-  // LOADING
-  // ==========================================
+  /* =========================================================
+     LOADING
+  ========================================================= */
 
   if (!user) {
     return (
@@ -1800,15 +1940,19 @@ function Dashboard() {
       <style>{styles}</style>
 
       <div className="dashboard">
+        {/* SIDEBAR OVERLAY */}
+
         {sidebarOpen && (
           <div className="sidebarOverlay" onClick={closeSidebar} />
         )}
 
-        {/* ==========================================
+        {/* =====================================================
             SIDEBAR
-        ========================================== */}
+        ====================================================== */}
 
         <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
+          {/* SIDEBAR HEADER */}
+
           <div className="sidebarHeader">
             <div className="logo">
               <div className="logoIcon">S</div>
@@ -1829,7 +1973,11 @@ function Dashboard() {
 
           <div className="sidebarLabel">Workspace</div>
 
+          {/* NAVIGATION */}
+
           <nav className="nav">
+            {/* OVERVIEW */}
+
             <button
               className={`navItem ${
                 activeTab === "overview" && !showProfiles ? "active" : ""
@@ -1844,24 +1992,23 @@ function Dashboard() {
               Overview
             </button>
 
-            {/* PROFILE BUTTON */}
+            {/* ALL PROFILES */}
 
             <button
               className={`navItem ${showProfiles ? "active" : ""}`}
-              onClick={() => {
-                setActiveTab("overview");
-                setShowProfiles(true);
-                closeSidebar();
-              }}
+              onClick={handleProfiles}
             >
               <span className="navIcon">♙</span>
               All Profiles
             </button>
 
+            {/* USERS */}
+
             {isAdmin && (
               <button
                 className="navItem"
                 onClick={() => {
+                  setActiveTab("overview");
                   setShowProfiles(false);
 
                   closeSidebar();
@@ -1878,9 +2025,40 @@ function Dashboard() {
               </button>
             )}
 
+            {/* TASKS */}
+
+            <button
+              className={`navItem ${activeTab === "tasks" ? "active" : ""}`}
+              onClick={() => {
+                setActiveTab("tasks");
+                setShowProfiles(false);
+                closeSidebar();
+              }}
+            >
+              <span className="navIcon">✓</span>
+              Tasks
+            </button>
+
+            {/* MESSAGES */}
+
+            <button
+              className={`navItem ${activeTab === "messages" ? "active" : ""}`}
+              onClick={() => {
+                setActiveTab("messages");
+                setShowProfiles(false);
+                closeSidebar();
+              }}
+            >
+              <span className="navIcon">✉</span>
+              Messages
+            </button>
+
+            {/* ACTIVITY */}
+
             <button
               className="navItem"
               onClick={() => {
+                setActiveTab("overview");
                 setShowProfiles(false);
 
                 closeSidebar();
@@ -1896,6 +2074,8 @@ function Dashboard() {
               Activity
             </button>
 
+            {/* SETTINGS */}
+
             <button
               className={`navItem ${activeTab === "settings" ? "active" : ""}`}
               onClick={() => {
@@ -1909,8 +2089,12 @@ function Dashboard() {
             </button>
           </nav>
 
+          {/* ACCOUNT */}
+
           <div className="sidebarBottom">
             <div className="sidebarLabel">Account</div>
+
+            {/* LOGOUT */}
 
             <button className="navItem logoutSide" onClick={handleLogout}>
               <span className="navIcon">↪</span>
@@ -1919,9 +2103,9 @@ function Dashboard() {
           </div>
         </aside>
 
-        {/* ==========================================
+        {/* =====================================================
             MAIN
-        ========================================== */}
+        ====================================================== */}
 
         <div className="main">
           {/* TOPBAR */}
@@ -1937,7 +2121,17 @@ function Dashboard() {
 
             <div className="breadcrumb">
               Dashboard /{" "}
-              <strong>{showProfiles ? "Profiles" : "Overview"}</strong>
+              <strong>
+                {activeTab === "settings"
+                  ? "Settings"
+                  : showProfiles
+                    ? "Profiles"
+                    : activeTab === "tasks"
+                      ? "Tasks"
+                      : activeTab === "messages"
+                        ? "Messages"
+                        : "Overview"}
+              </strong>
             </div>
 
             <div className="topRight">
@@ -1968,10 +2162,14 @@ function Dashboard() {
             </div>
           </header>
 
+          {/* =================================================
+              CONTENT
+          ================================================== */}
+
           <main className="content">
-            {/* ======================================
-                ALL PROFILES VIEW
-            ====================================== */}
+            {/* =================================================
+                SETTINGS
+            ================================================== */}
 
             {activeTab === "settings" && (
               <div
@@ -1980,7 +2178,6 @@ function Dashboard() {
                   animation: "settingsFadeIn 0.3s ease",
                 }}
               >
-                {/* Header */}
                 <div
                   style={{
                     marginBottom: "25px",
@@ -2009,7 +2206,6 @@ function Dashboard() {
                   </p>
                 </div>
 
-                {/* Settings Card */}
                 <div
                   style={{
                     width: "100%",
@@ -2020,9 +2216,7 @@ function Dashboard() {
                     boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
                   }}
                 >
-                  {/* ================================
-          SESSION TIMEOUT
-      ================================= */}
+                  {/* SESSION TIMEOUT */}
 
                   <div
                     style={{
@@ -2085,16 +2279,18 @@ function Dashboard() {
                       }}
                     >
                       <option value={5}>5 minutes</option>
+
                       <option value={15}>15 minutes</option>
+
                       <option value={30}>30 minutes</option>
+
                       <option value={60}>60 minutes</option>
+
                       <option value={120}>2 hours</option>
                     </select>
                   </div>
 
-                  {/* ================================
-          LANGUAGE
-      ================================= */}
+                  {/* LANGUAGE */}
 
                   <div
                     style={{
@@ -2157,13 +2353,12 @@ function Dashboard() {
                       }}
                     >
                       <option value="English">English</option>
-                      <option value="Urdu">Urdu</option>
+
+                      <option value="ur">اردو</option>
                     </select>
                   </div>
 
-                  {/* ================================
-          SAVE SETTINGS
-      ================================= */}
+                  {/* SAVE */}
 
                   <div
                     style={{
@@ -2212,6 +2407,22 @@ function Dashboard() {
                 </div>
               </div>
             )}
+
+            {/* =================================================
+                TASKS
+            ================================================== */}
+
+            {activeTab === "tasks" && <Tasks />}
+
+            {/* =================================================
+                MESSAGES
+            ================================================== */}
+
+            {activeTab === "messages" && <Messages />}
+
+            {/* =================================================
+                ALL PROFILES
+            ================================================== */}
 
             {showProfiles ? (
               <>
@@ -2363,8 +2574,6 @@ function Dashboard() {
                                 animationDelay: `${index * 0.04}s`,
                               }}
                             >
-                              {/* PROFILE */}
-
                               <td>
                                 <div className="userCell">
                                   <div className="tableAvatar">
@@ -2383,19 +2592,13 @@ function Dashboard() {
                                 </div>
                               </td>
 
-                              {/* EMAIL */}
-
                               <td>{item.email || "—"}</td>
-
-                              {/* ROLE */}
 
                               <td>
                                 <span className="roleBadge">
                                   {item.role || "user"}
                                 </span>
                               </td>
-
-                              {/* STATUS */}
 
                               <td>
                                 {item.lockUntil &&
@@ -2417,12 +2620,11 @@ function Dashboard() {
                                     }`}
                                   >
                                     <span className="statusIndicator" />
+
                                     {item.isActive ? "Active" : "Inactive"}
                                   </span>
                                 )}
                               </td>
-
-                              {/* JOINED */}
 
                               <td>
                                 {item.createdAt
@@ -2431,8 +2633,6 @@ function Dashboard() {
                                     ).toLocaleDateString()
                                   : "—"}
                               </td>
-
-                              {/* ACTIONS */}
 
                               <td>
                                 <div className="actions">
@@ -2460,468 +2660,476 @@ function Dashboard() {
                 </section>
               </>
             ) : (
-              /* ======================================
+              /* =================================================
                  NORMAL OVERVIEW
-              ====================================== */
+              ================================================== */
 
-              <>
-                {/* HERO */}
+              activeTab === "overview" && (
+                <>
+                  {/* HERO */}
 
-                <section className="hero">
-                  <div>
-                    <div className="heroEyebrow">Personal Dashboard</div>
-
-                    <h1 className="heroTitle">
-                      Welcome back, <span>{user.name}</span>
-                    </h1>
-
-                    <p className="heroSubtitle">
-                      Here's what's happening with your SecureHub account.
-                    </p>
-                  </div>
-
-                  <div className="statusPill">
-                    <span className="statusDot" />
-                    System operational
-                  </div>
-                </section>
-
-                {/* PROFILE */}
-
-                <section className="profilePanel">
-                  <div className="profileHero">
-                    <div className="profileImageWrapper">
-                      {profileImage ? (
-                        <img
-                          src={profileImage}
-                          alt={user.name || "User"}
-                          className="profileImage"
-                        />
-                      ) : (
-                        <div className="profileBigAvatar">
-                          {getInitials(user.name)}
-                        </div>
-                      )}
-
-                      <label
-                        htmlFor="profileImageUpload"
-                        className="profileImageEdit"
-                        title="Change profile image"
-                      >
-                        ✎
-                      </label>
-
-                      <input
-                        id="profileImageUpload"
-                        type="file"
-                        accept="image/*"
-                        className="profileImageInput"
-                        onChange={handleProfileImageChange}
-                      />
-                    </div>
-
+                  <section className="hero">
                     <div>
-                      <h2>{user.name}</h2>
+                      <div className="heroEyebrow">Personal Dashboard</div>
 
-                      <p>{user.email}</p>
+                      <h1 className="heroTitle">
+                        Welcome back, <span>{user.name}</span>
+                      </h1>
 
-                      <div
-                        style={{
-                          marginTop: "9px",
-                          display: "flex",
-                          gap: "7px",
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        <span className="roleBadge">{user.role}</span>
-
-                        <span
-                          className={`status ${
-                            user.isActive ? "active" : "inactive"
-                          }`}
-                        >
-                          <span className="statusIndicator" />
-
-                          {user.isActive ? "Active" : "Inactive"}
-                        </span>
-
-                        {profileImage && (
-                          <button
-                            type="button"
-                            onClick={handleRemoveProfileImage}
-                            style={{
-                              border: "1px solid rgba(239,68,68,.2)",
-                              background: "rgba(239,68,68,.07)",
-                              color: "#fca5a5",
-                              padding: "4px 8px",
-                              borderRadius: "999px",
-                              fontSize: "9px",
-                              fontWeight: "600",
-                              cursor: "pointer",
-                            }}
-                          >
-                            Remove Photo
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="profileDetails">
-                    <div className="detail">
-                      <span className="detailLabel">Account</span>
-
-                      <span className="detailValue">Secure</span>
+                      <p className="heroSubtitle">
+                        Here's what's happening with your SecureHub account.
+                      </p>
                     </div>
 
-                    <div className="detail">
-                      <span className="detailLabel">Access</span>
-
-                      <span className="detailValue">
-                        {isAdmin ? "Administrator" : "Standard"}
-                      </span>
-                    </div>
-                  </div>
-                </section>
-
-                {(error || success) && (
-                  <div
-                    style={{
-                      marginBottom: "25px",
-                    }}
-                  >
-                    {error && <div className="alert error">{error}</div>}
-
-                    {success && <div className="alert success">{success}</div>}
-                  </div>
-                )}
-
-                {/* STATISTICS */}
-
-                <section className="statsGrid">
-                  <div className="statCard">
-                    <div className="statTop">
-                      <span className="statLabel">Total Users</span>
-
-                      <div className="statIcon">♙</div>
-                    </div>
-
-                    <div className="statValue">
-                      {isAdmin ? users.length : "—"}
-                    </div>
-
-                    <div className="statDescription">Registered accounts</div>
-                  </div>
-
-                  <div className="statCard">
-                    <div className="statTop">
-                      <span className="statLabel">Active Users</span>
-
-                      <div className="statIcon">●</div>
-                    </div>
-
-                    <div className="statValue">
-                      {isAdmin ? activeUsers : "—"}
-                    </div>
-
-                    <div className="statDescription">Currently active</div>
-                  </div>
-
-                  <div className="statCard">
-                    <div className="statTop">
-                      <span className="statLabel">Administrators</span>
-
-                      <div className="statIcon">◈</div>
-                    </div>
-
-                    <div className="statValue">
-                      {isAdmin ? adminUsers : "—"}
-                    </div>
-
-                    <div className="statDescription">
-                      Users with admin access
-                    </div>
-                  </div>
-
-                  <div className="statCard">
-                    <div className="statTop">
-                      <span className="statLabel">Inactive</span>
-
-                      <div className="statIcon">◌</div>
-                    </div>
-
-                    <div className="statValue">
-                      {isAdmin ? inactiveUsers : "—"}
-                    </div>
-
-                    <div className="statDescription">Inactive accounts</div>
-                  </div>
-                </section>
-
-                {/* USER MANAGEMENT */}
-
-                {isAdmin && (
-                  <section id="user-management" className="panel">
-                    <div className="panelHeader">
-                      <div>
-                        <h2 className="panelTitle">User Management</h2>
-
-                        <p className="panelSubtitle">
-                          Manage registered SecureHub users
-                        </p>
-                      </div>
-
-                      <button
-                        className="refreshButton"
-                        onClick={fetchUsers}
-                        disabled={loadingUsers}
-                      >
-                        <span
-                          className={`refreshIcon ${
-                            loadingUsers ? "spinning" : ""
-                          }`}
-                        >
-                          ↻
-                        </span>
-
-                        {loadingUsers ? "Refreshing" : "Refresh"}
-                      </button>
-                    </div>
-
-                    <div className="tableWrapper">
-                      {loadingUsers ? (
-                        <div className="loading">
-                          <div className="loadingSpinner" />
-                          Loading users...
-                        </div>
-                      ) : users.length === 0 ? (
-                        <div className="empty">No registered users found.</div>
-                      ) : (
-                        <table className="table">
-                          <thead>
-                            <tr>
-                              <th>User</th>
-
-                              <th>Email</th>
-
-                              <th>Role</th>
-
-                              <th>Status</th>
-
-                              <th>Actions</th>
-                            </tr>
-                          </thead>
-
-                          <tbody>
-                            {users.map((item, index) => {
-                              // Debug locked account information
-                              console.log("USER STATUS:", {
-                                name: item.name,
-                                isActive: item.isActive,
-                                failedLoginAttempts: item.failedLoginAttempts,
-                                lockUntil: item.lockUntil,
-                                isLocked:
-                                  item.lockUntil &&
-                                  new Date(item.lockUntil) > new Date(),
-                              });
-
-                              return (
-                                <tr
-                                  key={item._id}
-                                  style={{
-                                    animationDelay: `${index * 0.04}s`,
-                                  }}
-                                >
-                                  <td>
-                                    <div className="userCell">
-                                      <div className="tableAvatar">
-                                        {getInitials(item.name)}
-                                      </div>
-
-                                      {item.name}
-                                    </div>
-                                  </td>
-
-                                  <td>{item.email}</td>
-
-                                  <td>
-                                    <span className="roleBadge">
-                                      {item.role}
-                                    </span>
-                                  </td>
-
-                                  {/* USER STATUS */}
-                                  <td>
-                                    {item.lockUntil &&
-                                    new Date(item.lockUntil) > new Date() ? (
-                                      <span
-                                        className="status inactive"
-                                        style={{
-                                          background: "rgba(239,68,68,.12)",
-                                          color: "#fca5a5",
-                                        }}
-                                      >
-                                        <span className="statusIndicator" />
-                                        🔒 Locked
-                                      </span>
-                                    ) : (
-                                      <span
-                                        className={`status ${
-                                          item.isActive ? "active" : "inactive"
-                                        }`}
-                                      >
-                                        <span className="statusIndicator" />
-
-                                        {item.isActive ? "Active" : "Inactive"}
-                                      </span>
-                                    )}
-                                  </td>
-
-                                  <td>
-                                    <div className="actions">
-                                      <button
-                                        className="actionButton editButton"
-                                        onClick={() => handleEditUser(item._id)}
-                                      >
-                                        Edit
-                                      </button>
-
-                                      <button
-                                        className="actionButton deleteButton"
-                                        onClick={() =>
-                                          handleDeleteUser(item._id)
-                                        }
-                                      >
-                                        Delete
-                                      </button>
-                                    </div>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      )}
+                    <div className="statusPill">
+                      <span className="statusDot" />
+                      System operational
                     </div>
                   </section>
-                )}
 
-                {/* SECURITY ACTIVITY */}
+                  {/* PROFILE */}
 
-                {isAdmin && (
-                  <section
-                    id="security-activity"
-                    className="panel"
-                    style={{
-                      marginTop: "25px",
-                    }}
-                  >
-                    <div className="panelHeader">
-                      <div>
-                        <h2 className="panelTitle">Recent Security Activity</h2>
+                  <section className="profilePanel">
+                    <div className="profileHero">
+                      <div className="profileImageWrapper">
+                        {profileImage ? (
+                          <img
+                            src={profileImage}
+                            alt={user.name || "User"}
+                            className="profileImage"
+                          />
+                        ) : (
+                          <div className="profileBigAvatar">
+                            {getInitials(user.name)}
+                          </div>
+                        )}
 
-                        <p className="panelSubtitle">
-                          Monitor authentication and account activity
-                        </p>
+                        <label
+                          htmlFor="profileImageUpload"
+                          className="profileImageEdit"
+                          title="Change profile image"
+                        >
+                          ✎
+                        </label>
+
+                        <input
+                          id="profileImageUpload"
+                          type="file"
+                          accept="image/*"
+                          className="profileImageInput"
+                          onChange={handleProfileImageChange}
+                        />
                       </div>
 
-                      <button
-                        className="refreshButton"
-                        onClick={fetchActivities}
-                        disabled={loadingActivities}
-                      >
-                        <span
-                          className={`refreshIcon ${
-                            loadingActivities ? "spinning" : ""
-                          }`}
-                        >
-                          ↻
-                        </span>
+                      <div>
+                        <h2>{user.name}</h2>
 
-                        {loadingActivities ? "Refreshing" : "Refresh"}
-                      </button>
+                        <p>{user.email}</p>
+
+                        <div
+                          style={{
+                            marginTop: "9px",
+                            display: "flex",
+                            gap: "7px",
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <span className="roleBadge">{user.role}</span>
+
+                          <span
+                            className={`status ${
+                              user.isActive ? "active" : "inactive"
+                            }`}
+                          >
+                            <span className="statusIndicator" />
+
+                            {user.isActive ? "Active" : "Inactive"}
+                          </span>
+
+                          {profileImage && (
+                            <button
+                              type="button"
+                              onClick={handleRemoveProfileImage}
+                              style={{
+                                border: "1px solid rgba(239,68,68,.2)",
+                                background: "rgba(239,68,68,.07)",
+                                color: "#fca5a5",
+                                padding: "4px 8px",
+                                borderRadius: "999px",
+                                fontSize: "9px",
+                                fontWeight: "600",
+                                cursor: "pointer",
+                              }}
+                            >
+                              Remove Photo
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
-                    {loadingActivities ? (
-                      <div className="loading">
-                        <div className="loadingSpinner" />
-                        Loading activity...
+                    <div className="profileDetails">
+                      <div className="detail">
+                        <span className="detailLabel">Account</span>
+
+                        <span className="detailValue">Secure</span>
                       </div>
-                    ) : activities.length === 0 ? (
-                      <div className="activityEmpty">
-                        No security activity found.
+
+                      <div className="detail">
+                        <span className="detailLabel">Access</span>
+
+                        <span className="detailValue">
+                          {isAdmin ? "Administrator" : "Standard"}
+                        </span>
                       </div>
-                    ) : (
-                      <div className="activityList">
-                        {activities.map((activity, index) => {
-                          const action = activity?.action;
+                    </div>
+                  </section>
 
-                          const isFailed = action === "LOGIN_FAILED";
+                  {(error || success) && (
+                    <div
+                      style={{
+                        marginBottom: "25px",
+                      }}
+                    >
+                      {error && <div className="alert error">{error}</div>}
 
-                          const isSuccess = action === "LOGIN_SUCCESS";
+                      {success && (
+                        <div className="alert success">{success}</div>
+                      )}
+                    </div>
+                  )}
 
-                          const label = getActivityLabel(activity);
+                  {/* STATISTICS */}
 
-                          const icon = getActivityIcon(activity);
+                  <section className="statsGrid">
+                    <div className="statCard">
+                      <div className="statTop">
+                        <span className="statLabel">Total Users</span>
 
-                          const userName =
-                            activity?.userName ||
-                            activity?.user?.name ||
-                            activity?.user?.email ||
-                            activity?.email ||
-                            (activity?.userRole === "admin" ? "Admin" : "User");
+                        <div className="statIcon">♙</div>
+                      </div>
 
-                          return (
-                            <div
-                              className="activityItem"
-                              key={
-                                activity?._id ||
-                                `${action || "activity"}-${
-                                  activity?.createdAt || index
-                                }-${index}`
-                              }
-                            >
+                      <div className="statValue">
+                        {isAdmin ? users.length : "—"}
+                      </div>
+
+                      <div className="statDescription">Registered accounts</div>
+                    </div>
+
+                    <div className="statCard">
+                      <div className="statTop">
+                        <span className="statLabel">Active Users</span>
+
+                        <div className="statIcon">●</div>
+                      </div>
+
+                      <div className="statValue">
+                        {isAdmin ? activeUsers : "—"}
+                      </div>
+
+                      <div className="statDescription">Currently active</div>
+                    </div>
+
+                    <div className="statCard">
+                      <div className="statTop">
+                        <span className="statLabel">Administrators</span>
+
+                        <div className="statIcon">◈</div>
+                      </div>
+
+                      <div className="statValue">
+                        {isAdmin ? adminUsers : "—"}
+                      </div>
+
+                      <div className="statDescription">
+                        Users with admin access
+                      </div>
+                    </div>
+
+                    <div className="statCard">
+                      <div className="statTop">
+                        <span className="statLabel">Inactive</span>
+
+                        <div className="statIcon">◌</div>
+                      </div>
+
+                      <div className="statValue">
+                        {isAdmin ? inactiveUsers : "—"}
+                      </div>
+
+                      <div className="statDescription">Inactive accounts</div>
+                    </div>
+                  </section>
+
+                  {/* USER MANAGEMENT */}
+
+                  {isAdmin && (
+                    <section id="user-management" className="panel">
+                      <div className="panelHeader">
+                        <div>
+                          <h2 className="panelTitle">User Management</h2>
+
+                          <p className="panelSubtitle">
+                            Manage registered SecureHub users
+                          </p>
+                        </div>
+
+                        <button
+                          className="refreshButton"
+                          onClick={fetchUsers}
+                          disabled={loadingUsers}
+                        >
+                          <span
+                            className={`refreshIcon ${
+                              loadingUsers ? "spinning" : ""
+                            }`}
+                          >
+                            ↻
+                          </span>
+
+                          {loadingUsers ? "Refreshing" : "Refresh"}
+                        </button>
+                      </div>
+
+                      <div className="tableWrapper">
+                        {loadingUsers ? (
+                          <div className="loading">
+                            <div className="loadingSpinner" />
+                            Loading users...
+                          </div>
+                        ) : users.length === 0 ? (
+                          <div className="empty">
+                            No registered users found.
+                          </div>
+                        ) : (
+                          <table className="table">
+                            <thead>
+                              <tr>
+                                <th>User</th>
+
+                                <th>Email</th>
+
+                                <th>Role</th>
+
+                                <th>Status</th>
+
+                                <th>Actions</th>
+                              </tr>
+                            </thead>
+
+                            <tbody>
+                              {users.map((item, index) => {
+                                const isLocked =
+                                  item.lockUntil &&
+                                  new Date(item.lockUntil) > new Date();
+
+                                return (
+                                  <tr
+                                    key={item._id}
+                                    style={{
+                                      animationDelay: `${index * 0.04}s`,
+                                    }}
+                                  >
+                                    <td>
+                                      <div className="userCell">
+                                        <div className="tableAvatar">
+                                          {getInitials(item.name)}
+                                        </div>
+
+                                        {item.name}
+                                      </div>
+                                    </td>
+
+                                    <td>{item.email}</td>
+
+                                    <td>
+                                      <span className="roleBadge">
+                                        {item.role}
+                                      </span>
+                                    </td>
+
+                                    <td>
+                                      {isLocked ? (
+                                        <span
+                                          className="status inactive"
+                                          style={{
+                                            background: "rgba(239,68,68,.12)",
+                                            color: "#fca5a5",
+                                          }}
+                                        >
+                                          <span className="statusIndicator" />
+                                          🔒 Locked
+                                        </span>
+                                      ) : (
+                                        <span
+                                          className={`status ${
+                                            item.isActive
+                                              ? "active"
+                                              : "inactive"
+                                          }`}
+                                        >
+                                          <span className="statusIndicator" />
+
+                                          {item.isActive
+                                            ? "Active"
+                                            : "Inactive"}
+                                        </span>
+                                      )}
+                                    </td>
+
+                                    <td>
+                                      <div className="actions">
+                                        <button
+                                          className="actionButton editButton"
+                                          onClick={() =>
+                                            handleEditUser(item._id)
+                                          }
+                                        >
+                                          Edit
+                                        </button>
+
+                                        <button
+                                          className="actionButton deleteButton"
+                                          onClick={() =>
+                                            handleDeleteUser(item._id)
+                                          }
+                                        >
+                                          Delete
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        )}
+                      </div>
+                    </section>
+                  )}
+
+                  {/* SECURITY ACTIVITY */}
+
+                  {isAdmin && (
+                    <section
+                      id="security-activity"
+                      className="panel"
+                      style={{
+                        marginTop: "25px",
+                      }}
+                    >
+                      <div className="panelHeader">
+                        <div>
+                          <h2 className="panelTitle">
+                            Recent Security Activity
+                          </h2>
+
+                          <p className="panelSubtitle">
+                            Monitor authentication and account activity
+                          </p>
+                        </div>
+
+                        <button
+                          className="refreshButton"
+                          onClick={fetchActivities}
+                          disabled={loadingActivities}
+                        >
+                          <span
+                            className={`refreshIcon ${
+                              loadingActivities ? "spinning" : ""
+                            }`}
+                          >
+                            ↻
+                          </span>
+
+                          {loadingActivities ? "Refreshing" : "Refresh"}
+                        </button>
+                      </div>
+
+                      {loadingActivities ? (
+                        <div className="loading">
+                          <div className="loadingSpinner" />
+                          Loading activity...
+                        </div>
+                      ) : activities.length === 0 ? (
+                        <div className="activityEmpty">
+                          No security activity found.
+                        </div>
+                      ) : (
+                        <div className="activityList">
+                          {activities.map((activity, index) => {
+                            const action = activity?.action;
+
+                            const isFailed = action === "LOGIN_FAILED";
+
+                            const isSuccess = action === "LOGIN_SUCCESS";
+
+                            const label = getActivityLabel(activity);
+
+                            const icon = getActivityIcon(activity);
+
+                            const userName =
+                              activity?.userName ||
+                              activity?.user?.name ||
+                              activity?.user?.email ||
+                              activity?.email ||
+                              (activity?.userRole === "admin"
+                                ? "Admin"
+                                : "User");
+
+                            return (
                               <div
-                                className={`activityIcon ${
-                                  isFailed
-                                    ? "failed"
-                                    : isSuccess
-                                      ? "success"
-                                      : ""
-                                }`}
+                                className="activityItem"
+                                key={
+                                  activity?._id ||
+                                  `${action || "activity"}-${
+                                    activity?.createdAt || index
+                                  }-${index}`
+                                }
                               >
-                                {icon}
-                              </div>
+                                <div
+                                  className={`activityIcon ${
+                                    isFailed
+                                      ? "failed"
+                                      : isSuccess
+                                        ? "success"
+                                        : ""
+                                  }`}
+                                >
+                                  {icon}
+                                </div>
 
-                              <div className="activityInfo">
-                                <div className="activityAction">{label}</div>
+                                <div className="activityInfo">
+                                  <div className="activityAction">{label}</div>
 
-                                <div className="activityUser">{userName}</div>
+                                  <div className="activityUser">{userName}</div>
 
-                                {activity?.details && (
-                                  <div className="activityDetails">
-                                    {activity.details}
+                                  {activity?.details && (
+                                    <div className="activityDetails">
+                                      {activity.details}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {activity?.createdAt && (
+                                  <div className="activityTime">
+                                    {new Date(
+                                      activity.createdAt,
+                                    ).toLocaleString()}
                                   </div>
                                 )}
                               </div>
-
-                              {activity?.createdAt && (
-                                <div className="activityTime">
-                                  {new Date(
-                                    activity.createdAt,
-                                  ).toLocaleString()}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </section>
-                )}
-              </>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </section>
+                  )}
+                </>
+              )
             )}
           </main>
+
           <TopToBack />
         </div>
       </div>

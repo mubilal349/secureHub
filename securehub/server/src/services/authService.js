@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import Task from "../models/Task.js";
 import createActivity from "../utils/createActivity.js";
 
 export const registerUser = async ({ name, email, password }) => {
@@ -81,7 +82,11 @@ export const loginUser = async ({ email, password, req }) => {
 
       await user.save();
 
-      await createActivity({
+      // ========================================
+      // CREATE ACTIVITY
+      // ========================================
+
+      const activity = await createActivity({
         user: user._id,
         userRole: user.role,
         type: "ACCOUNT_LOCKED",
@@ -91,10 +96,47 @@ export const loginUser = async ({ email, password, req }) => {
         req,
       });
 
+      // ========================================
+      // CREATE SECURITY TASK
+      // ========================================
+
+      await Task.create({
+        title: "Investigate Locked Account",
+
+        description: `Account ${user.email} was automatically locked after 4 failed login attempts. Review the user's login activity and determine whether further action is required.`,
+
+        priority: "High",
+
+        status: "Pending",
+
+        // User whose account was locked
+        relatedUser: user._id,
+
+        // Activity that caused the task
+        relatedActivity: activity?._id || null,
+
+        // No specific admin assigned yet
+        assignedTo: null,
+
+        // System-generated task
+        createdBy: null,
+
+        // Give admin 24 hours to investigate
+        dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      });
+
+      // ========================================
+      // RETURN LOCK ERROR
+      // ========================================
+
       throw new Error(
         "Too many failed login attempts. Your account has been locked for 60 minutes.",
       );
     }
+
+    // ========================================
+    // SAVE FAILED ATTEMPT
+    // ========================================
 
     await user.save();
 
