@@ -2,7 +2,7 @@ import Activity from "../models/Activity.js";
 
 const createActivity = async ({
   user = null,
-  userRole = null,
+  userRole = "user",
   type,
   activity,
   description,

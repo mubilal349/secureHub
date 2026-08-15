@@ -179,6 +179,7 @@ const styles = {
     fontWeight: "700",
     letterSpacing: "0.1em",
     textTransform: "uppercase",
+    paddingLeft: "10px",
   },
 
   inputWrapper: {
